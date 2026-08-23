@@ -7,7 +7,7 @@
   <style>
     :root {
       --excel-green: #107c41; --excel-border: #d4d4d4; --header-bg: #f3f2f1;
-      --synergy-gold: #f39c12; --hidden-dark: #2c3e50;
+      --epic-color: #d35400; --ancient-color: #8e44ad; --hidden-color: #2c3e50;
     }
     * { box-sizing: border-box; touch-action: none; }
     body {
@@ -26,7 +26,7 @@
 
     #excel-window {
       background: #fff; border: 2px solid #444; box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-      border-radius: 6px; overflow: hidden; width: 880px; height: 660px;
+      border-radius: 6px; overflow: hidden; width: 880px; height: 680px;
       position: relative; transform-origin: center center;
     }
 
@@ -41,7 +41,6 @@
     }
     .stat-badge { background: var(--header-bg); border: 1px solid #c8c6c4; padding: 4px 10px; border-radius: 3px; font-weight: bold; }
     
-    /* 신호등 텍스트 컬러 */
     .traffic-green { color: #2ecc71; text-shadow: 0 0 3px #2ecc71; }
     .traffic-yellow { color: #f39c12; text-shadow: 0 0 3px #f39c12; }
     .traffic-red { color: #e74c3c; text-shadow: 0 0 5px #e74c3c; animation: blink 1s infinite; }
@@ -55,33 +54,37 @@
 
     #tower-selection {
       background: #fafafa; padding: 8px 12px; border-bottom: 1px solid var(--excel-border);
-      display: flex; flex-direction: column; gap: 6px;
+      display: flex; flex-direction: column; gap: 8px;
+      max-height: 150px; overflow-y: auto;
     }
+    /* 스크롤바 디자인 */
+    #tower-selection::-webkit-scrollbar { width: 8px; }
+    #tower-selection::-webkit-scrollbar-thumb { background: #bbb; border-radius: 4px; }
+
     .tower-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-    .tower-row-title { font-size: 11px; font-weight: bold; color: #555; width: 55px; }
+    .tower-row-title { font-size: 11px; font-weight: bold; width: 60px; text-align: center; }
     
     .tower-btn {
       background: #fff; border: 1px solid var(--excel-border); border-radius: 4px;
-      padding: 4px 8px; cursor: pointer; font-size: 11px; font-weight: bold; transition: all 0.2s;
+      padding: 4px 8px; cursor: pointer; font-size: 11px; font-weight: bold; transition: all 0.1s;
     }
-    .tower-btn:hover { background: #e8f5e9; border-color: var(--excel-green); }
-    .tower-btn.active { border: 2px solid var(--excel-green); background: #c8e6c9; }
-    
-    .tower-btn.synergy { border-color: var(--synergy-gold); color: #d35400; }
-    .tower-btn.synergy:hover { background: #fcf3cf; }
-    .tower-btn.synergy.active { border: 2px solid #e67e22; background: #fdebd0; }
-    
-    .tower-btn.hidden-t { border-color: #8e44ad; color: #fff; background: #34495e; }
-    .tower-btn.hidden-t.active { border-color: #fff; background: #8e44ad; box-shadow: 0 0 8px #9b59b6; }
+    .tower-btn.base { border-color: #27ae60; color: #107c41; }
+    .tower-btn.base.active { background: #c8e6c9; border-width: 2px; }
+
+    .tower-btn.epic { border-color: #f39c12; color: #d35400; }
+    .tower-btn.epic.active { background: #fdebd0; border-width: 2px; }
+
+    .tower-btn.ancient { border-color: #8e44ad; color: #8e44ad; }
+    .tower-btn.ancient.active { background: #f5eef8; border-width: 2px; }
+
+    .tower-btn.hidden-t { background: #2c3e50; color: #fff; border-color: #fff; }
+    .tower-btn.hidden-t.active { background: #1a252f; box-shadow: 0 0 6px #fff; }
 
     #formula-bar {
       display: flex; align-items: center; background: #fff;
       border-bottom: 1px solid var(--excel-border); padding: 4px 8px; font-size: 12px;
     }
-    #name-box {
-      border: 1px solid #c8c6c4; padding: 2px 6px; background: #fafafa;
-      font-family: monospace; width: 50px; text-align: center; overflow: hidden;
-    }
+    #name-box { border: 1px solid #c8c6c4; padding: 2px 6px; background: #fafafa; font-family: monospace; width: 50px; text-align: center; overflow: hidden; }
     #fx-icon { font-style: italic; color: #999; margin: 0 8px; font-weight: bold; }
     #formula-input { flex: 1; font-family: monospace; color: #333; font-weight: bold; }
 
@@ -94,22 +97,20 @@
       background: rgba(0,0,0,0.85); z-index: 10;
     }
     .overlay h1 { margin: 0 0 15px 0; color: #fff; font-size: 32px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-    .btn-action {
-      background: var(--excel-green); color: #fff; border: none; padding: 15px 40px;
-      font-size: 18px; font-weight: bold; border-radius: 6px; cursor: pointer;
-    }
+    .btn-action { background: var(--excel-green); color: #fff; border: none; padding: 15px 40px; font-size: 18px; font-weight: bold; border-radius: 6px; cursor: pointer; }
 
-    /* 모달 공통 */
     .modal {
-      display: none; position: absolute; top: 40px; right: 10px; max-height: 430px; overflow-y: auto;
+      display: none; position: absolute; top: 10px; right: 10px; max-height: 470px; overflow-y: auto;
       background: rgba(255, 255, 255, 0.95); border: 2px solid #2c3e50; border-radius: 6px;
       padding: 15px; width: 340px; z-index: 20; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     }
-    .modal-item { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #ccc; }
+    .modal::-webkit-scrollbar { width: 6px; }
+    .modal::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    .modal-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #ccc; }
     .modal-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-    .m-title { font-weight: bold; font-size: 14px; }
-    .m-sub { font-size: 11px; color: #555; margin: 3px 0; font-family: monospace; font-weight:bold; }
-    .m-desc { font-size: 12px; color: #333; }
+    .m-title { font-weight: bold; font-size: 13px; }
+    .m-sub { font-size: 10px; color: #555; margin: 2px 0; font-family: monospace; font-weight:bold; }
+    .m-desc { font-size: 11px; color: #333; }
   </style>
 </head>
 <body>
@@ -118,87 +119,55 @@
 
   <div id="excel-window">
     <div id="title-bar">
-      <span>📊 Synergy_Defense.xlsx - Ultimate Update</span>
+      <span>📊 Synergy_Defense_Ultimate.xlsx - 무한 조합의 시대</span>
       <span>[—] [□] [✕]</span>
     </div>
 
     <div id="toolbar">
       <div class="stat-badge">🚦 트래픽: <span id="enemy-count" class="traffic-green">0</span> / 300</div>
-      <div class="stat-badge">💰 예산: $<span id="budget">200</span></div>
+      <div class="stat-badge">💰 예산: $<span id="budget">300</span></div>
       <div class="stat-badge" id="tier-badge">📈 티어: 1</div>
       <div style="margin-left: auto; display:flex;">
-        <button class="btn-toolbar" onclick="toggleModal('info-modal')">❓ 타워 설명서</button>
-        <button class="btn-toolbar" onclick="toggleModal('recipe-modal')">📖 조합표</button>
+        <button class="btn-toolbar" onclick="toggleModal('info-modal')">❓ 기본 타워 6종</button>
+        <button class="btn-toolbar" onclick="toggleModal('recipe-modal')">📖 전체 조합표</button>
       </div>
     </div>
 
-    <div id="tower-selection">
-      <div class="tower-row">
-        <div class="tower-row-title">기본 6종</div>
-        <button class="tower-btn active" data-type="SUM">=SUM ($40)</button>
-        <button class="tower-btn" data-type="IFERROR">=IFERR ($60)</button>
-        <button class="tower-btn" data-type="MIN">=MIN ($70)</button>
-        <button class="tower-btn" data-type="VLOOKUP">=VLOOK ($90)</button>
-        <button class="tower-btn" data-type="AVERAGE">=AVG ($100)</button>
-        <button class="tower-btn" data-type="MAX">=MAX ($130)</button>
-      </div>
-      <div class="tower-row">
-        <div class="tower-row-title" style="color:#d35400">시너지</div>
-        <button class="tower-btn synergy" data-type="SUMIF">=SUMIF</button>
-        <button class="tower-btn synergy" data-type="COUNTIFS">=CNTIFS</button>
-        <button class="tower-btn synergy" data-type="INDEXMATCH">=IDXMAT</button>
-        <button class="tower-btn synergy" data-type="XLOOKUP">=XLOOK</button>
-        <button class="tower-btn synergy" data-type="ISBLANK">=ISBLK</button>
-        <button class="tower-btn synergy" data-type="LARGE">=LARGE</button>
-        <button class="tower-btn synergy" data-type="SMALL">=SMALL</button>
-        <button class="tower-btn hidden-t" data-type="LAMBDA">=LAMBDA(???)</button>
-      </div>
-    </div>
+    <!-- 타워 선택 메뉴 (스크롤 지원) -->
+    <div id="tower-selection"></div>
 
     <div id="formula-bar">
       <div id="name-box">A1</div>
       <div id="fx-icon">fx</div>
-      <div id="formula-input">조합 타워는 맵 위의 재료 타워들을 소모하여 완성됩니다. (업글 비용 1.2배로 하향!)</div>
+      <div id="formula-input">조합 시 재료 타워에 투자했던 비용의 80%가 예산으로 환불됩니다!</div>
     </div>
 
     <div id="game-container">
       <canvas id="gameCanvas" width="880" height="490"></canvas>
       
-      <!-- 타워 설명서 모달 -->
+      <!-- 설명서 모달 -->
       <div id="info-modal" class="modal">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
           <strong style="font-size:16px;">❓ 기본 타워 설명서</strong>
           <button onclick="toggleModal('info-modal')" style="cursor:pointer; border:none; background:none; font-weight:bold;">X</button>
         </div>
-        <div class="modal-item"><div class="m-title" style="color:#107c41">=SUM</div><div class="m-desc">가장 기본적이고 빠른 단일 공격 타워입니다.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#d83b01">=IFERROR</div><div class="m-desc">레이저를 발사하여 적의 이동속도를 늦춥니다.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#3498db">=MIN</div><div class="m-desc">적을 짧은 시간동안 완전히 <b>얼려버립니다 (기절)</b>.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#0078d4">=VLOOKUP</div><div class="m-desc">타격 시 주변 적들에게 광역(Splash) 피해를 줍니다.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#9b59b6">=AVERAGE</div><div class="m-desc">한 번에 <b>여러 명의 적(3명)</b>을 동시에 타격합니다.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#8e44ad">=MAX</div><div class="m-desc">사거리가 맵 전체이며, 묵직하고 강력한 한 방을 쏩니다.</div></div>
+        <div id="info-content"></div>
       </div>
 
       <!-- 조합표 모달 -->
       <div id="recipe-modal" class="modal">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-          <strong style="font-size:16px;">📖 시너지 조합 가이드</strong>
+          <strong style="font-size:16px;">📖 전체 시너지 조합표</strong>
           <button onclick="toggleModal('recipe-modal')" style="cursor:pointer; border:none; background:none; font-weight:bold;">X</button>
         </div>
-        <div class="modal-item"><div class="m-title" style="color:#e67e22">=SUMIF</div><div class="m-sub">SUM + IFERROR</div><div class="m-desc">🛡️ <b>쉴드 관통!</b> 쉴드를 무시하고 체력에 직접 피해.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#1abc9c">=COUNTIFS</div><div class="m-sub">MAX + SUM</div><div class="m-desc">🔫 <b>머신건!</b> 초고속 연사 기관총.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#f1c40f">=INDEXMATCH</div><div class="m-sub">VLOOKUP + MAX</div><div class="m-desc">💥 <b>궁극 광역!</b> 맵 전체 사거리 + 넓은 범위 폭발.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#e74c3c">=XLOOKUP</div><div class="m-sub">VLOOKUP + AVERAGE</div><div class="m-desc">🎆 <b>체인 스플래시!</b> 3발을 쏘고 각각 광역 피해.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#00ced1">=ISBLANK</div><div class="m-sub">IFERROR + MIN</div><div class="m-desc">❄️ <b>절대 영도!</b> 타격 시 범위 안의 모든 적 빙결.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#e84393">=LARGE</div><div class="m-sub">MAX + AVERAGE</div><div class="m-desc">⚡ <b>글로벌 멀티샷!</b> 맵 전체에서 5명의 적 동시 저격.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#fdcb6e">=SMALL</div><div class="m-sub">MIN + SUM</div><div class="m-desc">🧊 <b>연쇄 빙결!</b> 엄청난 속도로 적들을 얼립니다.</div></div>
-        <div class="modal-item"><div class="m-title" style="color:#2c3e50; text-shadow:0 0 2px #8e44ad;">=LAMBDA (HIDDEN)</div><div class="m-sub">VLOOKUP + MAX + IFERROR</div><div class="m-desc">🌌 <b>블랙홀!</b> 3개의 재료가 필요한 초월적 광역+슬로우+관통.</div></div>
+        <div id="recipe-content"></div>
       </div>
 
       <div id="start-overlay" class="overlay">
-        <h1 style="color: #4cd137;">Excel Synergy Defense</h1>
+        <h1 style="color: #4cd137;">Excel Ultimate Defense</h1>
         <div style="color:#ddd; margin-bottom: 25px; text-align:center; line-height: 1.6;">
-          기본 타워 6종과 <b>시너지 타워 7종 + 히든 1종</b> 추가 완료!<br/>
-          업그레이드 난이도가 하향되었습니다. 트래픽 신호등을 주시하세요.
+          에픽 15종, 고대 3종, 히든 1종까지 <b>총 25종의 타워</b>가 완성되었습니다.<br/>
+          업그레이드된 타워를 조합에 갈아 넣으면 <b>투자 금액의 80%가 환불</b>됩니다!
         </div>
         <button class="btn-action" onclick="startGame()">▶ 게임 시작</button>
       </div>
@@ -212,9 +181,10 @@
   </div>
 
   <script>
+    // --- 화면 반응형 처리 ---
     function resizeWindow() {
       const win = document.getElementById('excel-window');
-      const scale = Math.min(window.innerWidth / 880, window.innerHeight / 660, 1);
+      const scale = Math.min(window.innerWidth / 880, window.innerHeight / 680, 1);
       win.style.transform = `scale(${scale})`;
     }
     window.addEventListener('resize', resizeWindow); resizeWindow();
@@ -237,8 +207,96 @@
       });
     }
 
+    // --- 데이터 딕셔너리 (총 25종) ---
+    const TOWER_SPECS = {
+      // 1. 기본 6종
+      SUM: { type:"base", cost: 40, range: 110, rate: 16, dmg: 15, color: "#107c41", name: "SUM", desc:"가장 기본적이고 빠른 단일 공격 타워" },
+      IFERROR: { type:"base", cost: 60, range: 100, rate: 3, dmg: 2, color: "#d83b01", name: "IFERR", isBeam: true, desc:"레이저를 발사하여 적의 이동속도를 늦춤" },
+      MIN: { type:"base", cost: 70, range: 100, rate: 45, dmg: 20, color: "#3498db", name: "MIN", stun: 45, desc:"적을 짧은 시간동안 완전히 얼려버림(기절)" },
+      VLOOKUP: { type:"base", cost: 90, range: 145, rate: 50, dmg: 45, color: "#0078d4", name: "VLOOK", splash: 75, desc:"타격 시 주변 적들에게 광역(Splash) 피해" },
+      AVERAGE: { type:"base", cost: 100, range: 125, rate: 35, dmg: 15, color: "#9b59b6", name: "AVG", multi: 3, desc:"한 번에 여러 명의 적(3명)을 동시 타격" },
+      MAX: { type:"base", cost: 130, range: 500, rate: 75, dmg: 180, color: "#8e44ad", name: "MAX", desc:"사거리가 맵 전체이며 묵직하고 강력한 한 방" },
+
+      // 2. 에픽 15종 (2조합)
+      SUMIF: { type:"epic", req: ["SUM", "IFERROR"], range: 130, rate: 14, dmg: 80, color: "#e67e22", name: "SUMIF", pierce: true, desc:"🛡️ 쉴드를 무시하고 체력에 직접 치명타" },
+      COUNTIFS: { type:"epic", req: ["MAX", "SUM"], range: 180, rate: 4, dmg: 35, color: "#1abc9c", name: "CNTIFS", desc:"🔫 엄청난 속도로 연사하는 초고속 기관총" },
+      INDEXMATCH: { type:"epic", req: ["VLOOKUP", "MAX"], range: 500, rate: 65, dmg: 400, color: "#f1c40f", name: "IDXMAT", splash: 120, desc:"💥 맵 전체 사거리 + 넓은 범위 폭발" },
+      XLOOKUP: { type:"epic", req: ["VLOOKUP", "AVERAGE"], range: 160, rate: 40, dmg: 50, color: "#e74c3c", name: "XLOOK", splash: 80, multi: 3, desc:"🎆 3발을 쏘고 각각 광역 피해 (체인 스플래시)" },
+      ISBLANK: { type:"epic", req: ["IFERROR", "MIN"], range: 125, rate: 60, dmg: 40, color: "#00ced1", name: "ISBLK", splash: 100, stun: 60, desc:"❄️ 타격 시 범위 안의 모든 적 빙결" },
+      LARGE: { type:"epic", req: ["MAX", "AVERAGE"], range: 500, rate: 60, dmg: 150, color: "#e84393", name: "LARGE", multi: 5, desc:"⚡ 맵 전체에서 5명의 적을 동시 저격" },
+      SMALL: { type:"epic", req: ["MIN", "SUM"], range: 130, rate: 12, dmg: 30, color: "#fdcb6e", name: "SMALL", stun: 15, desc:"🧊 엄청난 속도로 적들을 연쇄 빙결" },
+      SUBTOTAL: { type:"epic", req: ["SUM", "VLOOKUP"], range: 130, rate: 18, dmg: 45, color: "#d35400", name: "SUBTOT", splash: 65, desc:"🔥 빠른 공격 속도를 가진 광역 폭격기" },
+      PRODUCT: { type:"epic", req: ["SUM", "AVERAGE"], range: 130, rate: 15, dmg: 30, color: "#27ae60", name: "PROD", multi: 4, desc:"🎯 고속 4연발 속사포" },
+      XMATCH: { type:"epic", req: ["IFERROR", "VLOOKUP"], range: 130, rate: 4, dmg: 10, color: "#c0392b", name: "XMAT", splash: 100, isBeam: true, desc:"🕸️ 타격된 적 주변까지 둔화시키는 장판 빔" },
+      CONCAT: { type:"epic", req: ["IFERROR", "AVERAGE"], range: 130, rate: 4, dmg: 8, color: "#8e44ad", name: "CONCAT", multi: 4, isBeam: true, desc:"🔗 4갈래로 뻗어 나가는 다중 슬로우 빔" },
+      EXACT: { type:"epic", req: ["IFERROR", "MAX"], range: 500, rate: 3, dmg: 80, color: "#2c3e50", name: "EXACT", isBeam: true, desc:"🔭 맵 끝에서 쏘는 강력한 단일 슬로우 레이저" },
+      MATCH: { type:"epic", req: ["MIN", "VLOOKUP"], range: 140, rate: 50, dmg: 50, color: "#2980b9", name: "MATCH", splash: 90, stun: 30, desc:"💣 폭발하며 주변 적까지 얼려버리는 얼음 폭탄" },
+      MEDIAN: { type:"epic", req: ["MIN", "AVERAGE"], range: 140, rate: 40, dmg: 30, color: "#16a085", name: "MEDIAN", multi: 4, stun: 40, desc:"💠 4명의 적을 동시에 기절시키는 멀티 프리즈" },
+      FLOOR: { type:"epic", req: ["MIN", "MAX"], range: 500, rate: 70, dmg: 200, color: "#7f8c8d", name: "FLOOR", stun: 80, desc:"🗻 초장거리에서 적 하나를 확정적으로 장기 기절" },
+
+      // 3. 고대 3종 + 히든 1종 (3조합)
+      LET: { type:"ancient", req: ["SUM", "MAX", "AVERAGE"], range: 500, rate: 45, dmg: 250, color: "#f39c12", name: "LET", multi: 8, desc:"[고대] 궤도 폭격기. 맵 전역의 8명을 동시 타격" },
+      FILTER: { type:"ancient", req: ["MIN", "VLOOKUP", "IFERROR"], range: 300, rate: 5, dmg: 80, color: "#3498db", name: "FILTER", isBeam: true, splash: 200, stun: 60, desc:"[고대] 블리자드. 초광역 빙결+슬로우 필드 전개" },
+      RANDARRAY: { type:"ancient", req: ["SUM", "MIN", "MAX"], range: 300, rate: 5, dmg: 100, color: "#e84393", name: "RAND", stun: 10, desc:"[고대] 카오스 머신건. 무차별 연사와 미세한 기절" },
+      LAMBDA: { type:"hidden", req: ["VLOOKUP", "MAX", "IFERROR"], range: 300, rate: 5, dmg: 150, color: "#000", name: "LAMBDA", isBeam: true, splash: 120, pierce: true, desc:"[히든] 블랙홀. 방어무시+슬로우+광역파괴 레이저" }
+    };
+
+    // --- UI 동적 생성 (버튼 및 모달) ---
+    function initUI() {
+      const container = document.getElementById('tower-selection');
+      const baseRow = document.createElement('div'); baseRow.className = 'tower-row';
+      baseRow.innerHTML = `<div class="tower-row-title" style="color:#27ae60">기본 6종</div>`;
+      
+      const epicRow = document.createElement('div'); epicRow.className = 'tower-row';
+      epicRow.innerHTML = `<div class="tower-row-title" style="color:var(--epic-color)">에픽 (2개)</div>`;
+      
+      const ancientRow = document.createElement('div'); ancientRow.className = 'tower-row';
+      ancientRow.innerHTML = `<div class="tower-row-title" style="color:var(--ancient-color)">고대/히든</div>`;
+
+      let infoHTML = ''; let recipeHTML = '';
+
+      for (let key in TOWER_SPECS) {
+        const t = TOWER_SPECS[key];
+        const btn = document.createElement('button');
+        btn.className = `tower-btn ${t.type} ${key==='SUM'?'active':''}`;
+        btn.dataset.type = key;
+        
+        let label = `=${t.name}`;
+        if(t.type === 'base') {
+          label += ` ($${t.cost})`;
+          baseRow.appendChild(btn);
+          infoHTML += `<div class="modal-item"><div class="m-title" style="color:${t.color}">=${key}</div><div class="m-desc">${t.desc}</div></div>`;
+        } else if (t.type === 'epic') {
+          epicRow.appendChild(btn);
+        } else if (t.type === 'ancient') {
+          ancientRow.appendChild(btn);
+        } else if (t.type === 'hidden') {
+          btn.className = `tower-btn hidden-t`; label = "=LAMBDA(???)";
+          ancientRow.appendChild(btn);
+        }
+        btn.innerText = label;
+
+        if (t.req) {
+          recipeHTML += `<div class="modal-item">
+            <div class="m-title" style="color:${t.type==='hidden'?'#2c3e50':t.color}">=${key}</div>
+            <div class="m-sub">${t.req.join(' + ')}</div>
+            <div class="m-desc">${t.desc}</div>
+          </div>`;
+        }
+      }
+      container.appendChild(baseRow); container.appendChild(epicRow); container.appendChild(ancientRow);
+      document.getElementById('info-content').innerHTML = infoHTML;
+      document.getElementById('recipe-content').innerHTML = recipeHTML;
+
+      document.querySelectorAll(".tower-btn").forEach(btn => {
+        btn.addEventListener("pointerdown", () => {
+          Sound.init(); document.querySelectorAll(".tower-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active"); selectedTower = btn.dataset.type;
+        });
+      });
+    }
+
     // --- 사운드 엔진 ---
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
     const Sound = {
       lastPlay: {},
@@ -248,36 +306,36 @@
         if (!audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
         osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime;
         osc.type = type; osc.frequency.setValueAtTime(fStart, now); osc.frequency.exponentialRampToValueAtTime(Math.max(fEnd, 1), now + dur);
-        gain.gain.setValueAtTime(vol * 0.4, now); gain.gain.linearRampToValueAtTime(vEnd, now + dur);
+        gain.gain.setValueAtTime(vol * 0.3, now); gain.gain.linearRampToValueAtTime(vEnd, now + dur);
         osc.start(now); osc.stop(now + dur);
       },
       shoot(type) {
         if (!this.canPlay(`s_${type}`, 50)) return;
-        if (type === "COUNTIFS" || type === "SMALL") this.playOsc("triangle", 800, 400, 0.05, 0.1, 0.01);
-        else if (type === "INDEXMATCH" || type === "LARGE" || type === "MAX") this.playOsc("sawtooth", 200, 40, 0.3, 0.2, 0.01);
-        else if (type === "SUMIF") this.playOsc("square", 600, 100, 0.1, 0.15, 0.01);
-        else if (type === "MIN" || type === "ISBLANK") this.playOsc("sine", 900, 700, 0.1, 0.15, 0.01); // 얼음 발사음
+        if (type.includes("COUNT") || type.includes("RAND")) this.playOsc("triangle", 800, 400, 0.05, 0.1, 0.01);
+        else if (type.includes("MATCH") || type.includes("LARGE") || type.includes("MAX")) this.playOsc("sawtooth", 200, 40, 0.3, 0.15, 0.01);
+        else if (type.includes("IF") || type.includes("LET")) this.playOsc("square", 600, 100, 0.1, 0.1, 0.01);
+        else if (type.includes("MIN") || type.includes("BLANK") || type.includes("FLOOR")) this.playOsc("sine", 900, 700, 0.1, 0.1, 0.01); 
         else this.playOsc("triangle", 600, 150, 0.08, 0.1, 0.01);
       },
       hit(type, isBoss) {
-        if (isBoss) { if(this.canPlay("h_boss", 100)) this.playOsc("square", 100, 20, 0.4, 0.3, 0.01); } 
+        if (isBoss) { if(this.canPlay("h_boss", 100)) this.playOsc("square", 100, 20, 0.4, 0.2, 0.01); } 
         else {
           if (!this.canPlay(`h_${type}`, 40)) return;
-          if (type.includes("MATCH") || type.includes("LOOKUP") || type.includes("BLANK")) this.playOsc("square", 120, 30, 0.2, 0.2, 0.01);
-          else if (type === "MIN" || type === "SMALL") this.playOsc("sine", 1200, 1000, 0.05, 0.1, 0.01); // 쨍그랑
-          else this.playOsc("sine", 350, 80, 0.05, 0.08, 0.01);
+          if (type.includes("LOOK") || type.includes("MATCH") || type.includes("LET")) this.playOsc("square", 120, 30, 0.2, 0.15, 0.01);
+          else if (type.includes("MIN") || type.includes("SMALL") || type.includes("MEDIAN")) this.playOsc("sine", 1200, 1000, 0.05, 0.05, 0.01); 
+          else this.playOsc("sine", 350, 80, 0.05, 0.05, 0.01);
         }
       },
-      synergy() { this.playOsc("sine", 600, 1500, 0.4, 0.3, 0); },
-      error() { this.playOsc("sawtooth", 150, 100, 0.2, 0.2, 0); }
+      synergy() { this.playOsc("sine", 600, 1500, 0.4, 0.2, 0); },
+      error() { this.playOsc("sawtooth", 150, 100, 0.2, 0.1, 0); }
     };
 
-    // --- 게임 기본 세팅 ---
+    // --- 게임 상태 ---
     const canvas = document.getElementById("gameCanvas"); const ctx = canvas.getContext("2d");
     const CELL_W = 55; const CELL_H = 30; const HEADER_W = 40; const HEADER_H = 25;
     const COLS = 15; const ROWS = 15; const MAX_ENEMIES = 300;
 
-    let gameState = 0; let budget = 200; let selectedTower = "SUM";
+    let gameState = 0; let budget = 300; let selectedTower = "SUM";
     let gameTime = 0; let frame = 0; let screenShake = 0;
 
     const loopOuter = [ { c: 7, r: 1 }, { c: 14, r: 7 }, { c: 7, r: 14 }, { c: 1, r: 7 } ];
@@ -285,35 +343,14 @@
     function gridToPixel(c, r) { return { x: HEADER_W + c * CELL_W + CELL_W / 2, y: HEADER_H + r * CELL_H + CELL_H / 2 }; }
     const pathOuterPx = loopOuter.map(p => gridToPixel(p.c, p.r)); const pathInnerPx = loopInner.map(p => gridToPixel(p.c, p.r));
 
-    // 타워 스펙 (기본 6종 + 시너지 7종 + 히든 1종)
-    const TOWER_SPECS = {
-      SUM: { cost: 40, range: 110, rate: 16, dmg: 15, color: "#107c41", name: "SUM" },
-      IFERROR: { cost: 60, range: 100, rate: 3, dmg: 2, color: "#d83b01", name: "IFERR", isBeam: true },
-      MIN: { cost: 70, range: 100, rate: 45, dmg: 20, color: "#3498db", name: "MIN", stun: 45 },
-      VLOOKUP: { cost: 90, range: 145, rate: 50, dmg: 45, color: "#0078d4", name: "VLOOK", splash: 75 },
-      AVERAGE: { cost: 100, range: 125, rate: 35, dmg: 15, color: "#9b59b6", name: "AVG", multi: 3 },
-      MAX: { cost: 130, range: 500, rate: 75, dmg: 180, color: "#8e44ad", name: "MAX" },
-
-      SUMIF: { req: ["SUM", "IFERROR"], range: 130, rate: 14, dmg: 80, color: "#e67e22", name: "SUMIF", pierce: true }, 
-      COUNTIFS: { req: ["MAX", "SUM"], range: 180, rate: 4, dmg: 35, color: "#1abc9c", name: "CNTIFS" }, 
-      INDEXMATCH: { req: ["VLOOKUP", "MAX"], range: 500, rate: 65, dmg: 400, color: "#f1c40f", name: "IDXMAT", splash: 120 },
-      XLOOKUP: { req: ["VLOOKUP", "AVERAGE"], range: 160, rate: 40, dmg: 50, color: "#e74c3c", name: "XLOOK", splash: 80, multi: 3 },
-      ISBLANK: { req: ["IFERROR", "MIN"], range: 125, rate: 60, dmg: 40, color: "#00ced1", name: "ISBLK", splash: 100, stun: 60 },
-      LARGE: { req: ["MAX", "AVERAGE"], range: 500, rate: 60, dmg: 150, color: "#e84393", name: "LARGE", multi: 5 },
-      SMALL: { req: ["MIN", "SUM"], range: 130, rate: 12, dmg: 30, color: "#fdcb6e", name: "SMALL", stun: 15 },
-      LAMBDA: { req: ["VLOOKUP", "MAX", "IFERROR"], range: 300, rate: 5, dmg: 150, color: "#2c3e50", name: "LAMBDA", isBeam: true, splash: 120, pierce: true }
-    };
-
     let towers = []; let enemies = []; let projectiles = [];
     let particles = []; let floatingTexts = []; let shockwaves = [];
 
-    // --- 적 클래스 ---
+    // --- 클래스 정의 ---
     class ErrorEnemy {
       constructor(tier, isBoss = false) {
         this.isBoss = isBoss;
-        const rand = Math.random();
-        this.type = isBoss ? "BOSS" : (rand < 0.2 ? "RUNNER" : (rand < 0.5 ? "TANK" : "NORMAL"));
-        
+        const rand = Math.random(); this.type = isBoss ? "BOSS" : (rand < 0.2 ? "RUNNER" : (rand < 0.5 ? "TANK" : "NORMAL"));
         this.baseSpeed = 1.3 + Math.min(2.5, tier * 0.1);
         const baseHp = 35 * Math.pow(1.3, tier - 1);
         this.maxShield = 0;
@@ -331,18 +368,15 @@
         this.scale = this.baseScale; this.stunTimer = 0; this.slowTimer = 0;
         this.updateCoords();
       }
-
       updateCoords() {
         const seg = Math.floor(this.progress) % 4; const nextSeg = (seg + 1) % 4;
         const t = this.progress - Math.floor(this.progress);
         this.x = this.track[seg].x + (this.track[nextSeg].x - this.track[seg].x) * t; 
         this.y = this.track[seg].y + (this.track[nextSeg].y - this.track[seg].y) * t;
       }
-
       update() {
-        if (this.stunTimer > 0) { 
-          this.stunTimer--; this.hitFlash = Math.max(this.hitFlash, 1); // 얼어있는 이펙트 유지
-        } else {
+        if (this.stunTimer > 0) { this.stunTimer--; this.hitFlash = Math.max(this.hitFlash, 1); } 
+        else {
           if (this.slowTimer > 0) { this.slowTimer--; if (this.slowTimer <= 0) this.currentSpeed = this.speed; }
           this.progress = (this.progress + (this.currentSpeed / 400)) % 4;
         }
@@ -350,36 +384,26 @@
         if (this.scale > this.baseScale) this.scale -= 0.05;
         this.updateCoords();
       }
-
       takeDamage(dmg, pierce = false, stunTime = 0) {
         if (stunTime > 0) this.stunTimer = Math.max(this.stunTimer, stunTime);
-        
         let actualDmg = dmg;
         if (this.shield > 0 && !pierce) {
           if (actualDmg > this.shield) { actualDmg -= this.shield; this.shield = 0; this.hp -= actualDmg; } 
           else { this.shield -= actualDmg; }
         } else { this.hp -= actualDmg; }
-
-        this.hitFlash = this.stunTimer > 0 ? 1 : 3; 
-        this.scale = this.baseScale * 1.2;
-        if (Math.random() > 0.4) floatingTexts.push(new FloatingText(this.x, this.y - 15, Math.round(dmg), pierce ? "#f1c40f" : "#fff", pierce));
+        this.hitFlash = this.stunTimer > 0 ? 1 : 3; this.scale = this.baseScale * 1.2;
+        if (Math.random() > 0.5) floatingTexts.push(new FloatingText(this.x, this.y - 15, Math.round(dmg), pierce ? "#f1c40f" : "#fff", pierce));
       }
-
       draw() {
         ctx.save(); ctx.translate(this.x, this.y); ctx.scale(this.scale, this.scale);
-        // 얼어있으면 파란색 테두리
         const isStunned = this.stunTimer > 0;
         const bgColor = this.hitFlash > 0 ? (isStunned ? "#e0f7fa" : "#fff") : (this.isBoss ? "#3e0000" : "#ffebee");
         const borderColor = isStunned ? "#00bcd4" : (this.hitFlash > 0 ? "#ff0000" : "#e53935");
-        
-        ctx.fillStyle = bgColor; ctx.strokeStyle = borderColor;
-        ctx.lineWidth = this.hitFlash > 0 ? 2 : 1;
+        ctx.fillStyle = bgColor; ctx.strokeStyle = borderColor; ctx.lineWidth = this.hitFlash > 0 ? 2 : 1;
         ctx.fillRect(-22, -9, 44, 18); ctx.strokeRect(-22, -9, 44, 18);
-
         ctx.fillStyle = this.hitFlash > 0 && !isStunned ? "#000" : (isStunned ? "#0097a7" : "#b71c1c");
         ctx.font = this.isBoss ? "bold 8px monospace" : "bold 9px monospace";
         ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(this.tag, 0, 0);
-
         ctx.fillStyle = "#555"; ctx.fillRect(-18, -16, 36, 4); 
         ctx.fillStyle = "#e53935"; ctx.fillRect(-18, -14, 36 * Math.max(0, this.hp / this.maxHp), 2); 
         if (this.maxShield > 0) { ctx.fillStyle = "#3498db"; ctx.fillRect(-18, -16, 36 * Math.max(0, this.shield / this.maxShield), 2); }
@@ -387,44 +411,42 @@
       }
     }
 
-    // --- 타워 ---
     class Tower {
       constructor(col, row, type) {
         this.col = col; this.row = row; const pos = gridToPixel(col, row);
         this.x = pos.x; this.y = pos.y; this.type = type; this.baseSpec = TOWER_SPECS[type];
-        this.isSynergy = !!this.baseSpec.req; this.level = 1; this.updateStats();
-        this.cooldown = 0; this.recoil = 0; this.laserTarget = null;
+        this.isSynergy = !!this.baseSpec.req; this.level = 1; 
+        
+        // 투자된 총 금액 트래킹 (초기 설치 비용)
+        this.totalSpent = this.isSynergy ? (this.baseSpec.req.length > 2 ? 300 : 150) : this.baseSpec.cost;
+        this.updateStats();
+        this.cooldown = 0; this.recoil = 0; this.laserTargets = [];
       }
-
       updateStats() {
         this.dmg = this.baseSpec.dmg * Math.pow(1.35, this.level - 1);    
-        // 업그레이드 비용 계수 1.2배로 하향 조정 (기존 1.4배)
+        // 1.2배 복리로 증가하는 업그레이드 비용
         const baseCost = this.isSynergy ? (this.baseSpec.req.length > 2 ? 300 : 150) : this.baseSpec.cost;
         this.upgradeCost = Math.floor(baseCost * Math.pow(1.2, this.level));
         this.range = this.baseSpec.range * (1 + (this.level - 1) * 0.05); 
         this.rate = Math.max(2, this.baseSpec.rate - (this.level - 1) * 1.5);
         this.displayName = `${this.baseSpec.name} L${this.level}`;
       }
-
       upgrade() {
         if (budget >= this.upgradeCost) {
-          budget -= this.upgradeCost; this.level++; this.updateStats(); Sound.upgrade();
+          budget -= this.upgradeCost; 
+          this.totalSpent += this.upgradeCost; // 투자 금액 누적
+          this.level++; this.updateStats(); Sound.upgrade();
           floatingTexts.push(new FloatingText(this.x, this.y - 20, "UP!", this.baseSpec.color, true, 20)); return true;
-        }
-        return false;
+        } return false;
       }
-
       update() {
         if (this.recoil > 0) this.recoil--; if (this.cooldown > 0) this.cooldown--;
-        
         let targets = [];
         if (this.baseSpec.multi) {
-          // 다중 타겟 (AVERAGE, XLOOKUP, LARGE)
           targets = enemies.filter(e => Math.hypot(e.x - this.x, e.y - this.y) <= this.range)
                            .sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y))
                            .slice(0, this.baseSpec.multi);
         } else {
-          // 단일 타겟 (보스 우선)
           let best = null; let minDist = this.range;
           for (let e of enemies) {
             const d = Math.hypot(e.x - this.x, e.y - this.y);
@@ -434,30 +456,26 @@
         }
 
         if (this.baseSpec.isBeam && targets.length > 0) {
-          this.laserTarget = targets[0]; // 빔은 단일 타겟만 시각화
+          this.laserTargets = targets;
           if (this.cooldown === 0) {
             targets.forEach(t => {
-              t.takeDamage(this.dmg, this.baseSpec.pierce);
+              t.takeDamage(this.dmg, this.baseSpec.pierce, this.baseSpec.stun || 0);
               if (this.baseSpec.splash) {
-                // LAMBDA 폭발 처리
-                enemies.forEach(e => {
-                  if (e !== t && Math.hypot(e.x - t.x, e.y - t.y) <= this.baseSpec.splash) e.takeDamage(this.dmg * 0.5, true);
-                });
+                enemies.forEach(e => { if (e !== t && Math.hypot(e.x - t.x, e.y - t.y) <= this.baseSpec.splash) e.takeDamage(this.dmg * 0.5, true); });
                 shockwaves.push(new Shockwave(t.x, t.y, this.baseSpec.splash, this.baseSpec.color));
               }
               t.currentSpeed = t.speed * Math.max(0.1, 0.4 - (this.level * 0.02)); t.slowTimer = 10; 
             });
-            this.cooldown = this.rate; Sound.hit("SUM"); 
+            this.cooldown = this.rate; Sound.hit(this.type); 
           }
         } else {
-          this.laserTarget = null;
+          this.laserTargets = [];
           if (targets.length > 0 && this.cooldown === 0) {
             targets.forEach(t => projectiles.push(new Projectile(this.x, this.y, t, this)));
             this.cooldown = this.rate; this.recoil = 5; Sound.shoot(this.type);
           }
         }
       }
-
       draw() {
         const cellLeft = HEADER_W + this.col * CELL_W; const cellTop = HEADER_H + this.row * CELL_H;
         ctx.fillStyle = this.type === "LAMBDA" ? "#111" : (this.isSynergy ? "#fdebd0" : (this.level > 1 ? `hsla(${this.level*25}, 80%, 75%, 0.3)` : "#e8f5e9"));
@@ -469,10 +487,13 @@
         ctx.fillStyle = this.type === "LAMBDA" ? "#fff" : this.baseSpec.color; ctx.font = "bold 9px sans-serif";
         ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(this.displayName, this.x, this.y);
 
-        if (this.baseSpec.isBeam && this.laserTarget && enemies.includes(this.laserTarget)) {
+        if (this.baseSpec.isBeam && this.laserTargets.length > 0) {
           ctx.strokeStyle = this.type === "LAMBDA" ? "#8e44ad" : this.baseSpec.color; 
           ctx.lineWidth = 2 + Math.min(3, this.level * 0.3) + Math.random();
-          ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.laserTarget.x, this.laserTarget.y); ctx.stroke();
+          this.laserTargets.forEach(t => {
+            if(!enemies.includes(t)) return;
+            ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(t.x, t.y); ctx.stroke();
+          });
         }
       }
     }
@@ -480,7 +501,7 @@
     class Projectile {
       constructor(x, y, target, tower) {
         this.x = x; this.y = y; this.target = target; this.tower = tower;
-        this.speed = tower.type.includes("MAX") || tower.type.includes("LARGE") ? 20 : (tower.baseSpec.splash ? 8 : 12);
+        this.speed = tower.type.includes("MAX") || tower.type.includes("LARGE") || tower.type.includes("LET") ? 25 : (tower.baseSpec.splash ? 8 : 12);
       }
       update() {
         if (!enemies.includes(this.target)) return true;
@@ -508,17 +529,14 @@
       }
       draw() {
         ctx.fillStyle = this.tower.baseSpec.color;
-        if (this.tower.baseSpec.splash || this.tower.type.includes("MAX") || this.tower.type.includes("LARGE")) {
+        if (this.tower.baseSpec.splash || this.tower.type.includes("MAX") || this.tower.type.includes("LARGE") || this.tower.type.includes("LET")) {
           ctx.beginPath(); ctx.arc(this.x, this.y, this.tower.baseSpec.splash ? 5 : 4, 0, Math.PI * 2); ctx.fill();
         } else { ctx.font = "bold 14px monospace"; ctx.fillText(";", this.x, this.y); }
       }
     }
 
     class Particle {
-      constructor(x, y, color, speed) {
-        this.x = x; this.y = y; this.color = color; const a = Math.random() * Math.PI * 2; const v = Math.random() * speed + 1;
-        this.vx = Math.cos(a) * v; this.vy = Math.sin(a) * v; this.life = 10 + Math.random() * 10; this.maxLife = this.life;
-      }
+      constructor(x, y, color, speed) { this.x = x; this.y = y; this.color = color; const a = Math.random() * Math.PI * 2; const v = Math.random() * speed + 1; this.vx = Math.cos(a) * v; this.vy = Math.sin(a) * v; this.life = 10 + Math.random() * 10; this.maxLife = this.life; }
       update() { this.x += this.vx; this.y += this.vy; this.life--; return this.life <= 0; }
       draw() { ctx.fillStyle = this.color; ctx.globalAlpha = this.life / this.maxLife; ctx.fillRect(this.x, this.y, 3, 3); ctx.globalAlpha = 1; }
     }
@@ -552,14 +570,7 @@
       ctx.setLineDash([]);
     }
 
-    // --- 인터랙션 로직 ---
-    document.querySelectorAll(".tower-btn").forEach(btn => {
-      btn.addEventListener("pointerdown", (e) => {
-        Sound.init(); document.querySelectorAll(".tower-btn").forEach(b => b.classList.remove("active"));
-        btn.classList.add("active"); selectedTower = btn.dataset.type;
-      });
-    });
-
+    // --- 상호작용 로직 ---
     canvas.addEventListener("pointerdown", (e) => {
       if (gameState !== 1) return; Sound.init();
       const pos = getGridPos(e); if (!pos.isValid || pos.col >= COLS || pos.row >= ROWS) return;
@@ -579,12 +590,21 @@
             Sound.error(); return; 
           }
         }
+        
+        let refundGold = 0;
         towersToRemove.forEach(t => {
+          refundGold += t.totalSpent * 0.8; // 80% 페이백
           const idx = towers.indexOf(t); if(idx > -1) towers.splice(idx, 1);
           for(let i=0; i<8; i++) particles.push(new Particle(t.x, t.y, "#888", 3));
         });
+        
+        refundGold = Math.floor(refundGold);
+        budget += refundGold;
+
         towers.push(new Tower(pos.col, pos.row, selectedTower)); Sound.synergy();
-        floatingTexts.push(new FloatingText(pos.col*CELL_W + HEADER_W + 20, pos.row*CELL_H + HEADER_H, selectedTower === "LAMBDA" ? "HIDDEN!!" : "SYNERGY!", spec.color, true, 40));
+        
+        floatingTexts.push(new FloatingText(pos.col*CELL_W + HEADER_W + 20, pos.row*CELL_H + HEADER_H - 15, `+$${refundGold} 환불!`, "#f1c40f", true, 45));
+        floatingTexts.push(new FloatingText(pos.col*CELL_W + HEADER_W + 20, pos.row*CELL_H + HEADER_H + 5, selectedTower === "LAMBDA" ? "HIDDEN!!" : "SYNERGY!", spec.color, true, 45));
         updateUI(); return;
       }
 
@@ -605,7 +625,7 @@
 
     function updateUI() {
       const el = document.getElementById("enemy-count"); el.innerText = enemies.length;
-      el.className = ""; // 신호등 색상 초기화
+      el.className = ""; 
       if (enemies.length < 100) el.classList.add("traffic-green");
       else if (enemies.length < 200) el.classList.add("traffic-yellow");
       else el.classList.add("traffic-red");
@@ -618,7 +638,7 @@
     function restartGame() {
       Sound.init(); document.getElementById("game-over-overlay").style.display = "none";
       towers = []; enemies = []; projectiles = []; particles = []; floatingTexts = []; shockwaves = [];
-      budget = 200; gameTime = 0; frame = 0; screenShake = 0; updateUI(); gameState = 1;
+      budget = 300; gameTime = 0; frame = 0; screenShake = 0; updateUI(); gameState = 1;
     }
 
     function gameLoop() {
@@ -660,6 +680,9 @@
       ctx.restore(); if (frame % 10 === 0) updateUI();
       if (gameState === 1) requestAnimationFrame(gameLoop);
     }
+    
+    // 초기 설정
+    initUI();
     drawExcelGrid();
   </script>
 </body>
