@@ -35,6 +35,7 @@
       background: #fff; border: 2px solid #444; box-shadow: 0 10px 40px rgba(0,0,0,0.9);
       border-radius: 6px; overflow: hidden; height: 590px; width: 1160px;
       display: flex; flex-direction: column; transform-origin: center center;
+      flex-shrink: 0; /* 🚨 이 한 줄이 화면 강제 잘림 현상을 100% 막아줍니다! */
     }
 
     #title-bar { background: var(--bar-color); color: #fff; padding: 6px 12px; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; transition: background 1s; }
@@ -119,12 +120,10 @@
       <div class="stat-badge" id="tier-badge">📈 티어: 1 (EXCEL)</div>
       <div style="margin-left: auto; display:flex;">
         <button class="btn-toolbar btn-full" onclick="goFullscreen()">📱 앱모드</button>
-        <button class="btn-toolbar btn-full" onclick="goFullscreen()">📱 앱모드</button>
         <button class="btn-toolbar btn-quality" id="quality-btn" onclick="toggleQuality()">⚙️ 품질: 높음</button>
         <button class="btn-toolbar" onclick="toggleModal('info-modal')">❓ 타워 설명</button>
         <button class="btn-toolbar" onclick="toggleModal('recipe-modal')">📖 조합표</button>
         <button class="btn-toolbar btn-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()">▶ 패널닫기</button>
-        
       </div>
     </div>
 
@@ -147,7 +146,6 @@
           <div id="recipe-content"></div>
         </div>
 
-
         <div id="start-overlay" class="overlay">
           <h1 style="color: #4cd137;">Multiverse Defense</h1>
           <div style="color:#ddd; margin-bottom: 25px; text-align:center; line-height: 1.6;">
@@ -159,12 +157,11 @@
           <button class="btn-action" onclick="startGame()">▶ 게임 시작</button>
         </div>
 
-        <!-- ▼ 새롭게 추가되는 증강 선택 화면! (여기서부터) ▼ -->
+        <!-- 증강 선택 화면 -->
         <div id="augment-overlay">
           <div class="aug-title-text">✨ 아수라장 증강 선택 ✨</div>
           <div id="augment-cards-container"></div>
         </div>
-        <!-- ▲ (여기까지) ▲ -->
 
         <div id="game-over-overlay" class="overlay" style="display: none;">
           <h1 id="go-title">#STACK_OVERFLOW!</h1>
