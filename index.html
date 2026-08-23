@@ -98,6 +98,9 @@
     .tier-Prismatic { border: 4px solid transparent; background-image: linear-gradient(#222, #222), linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff); background-origin: border-box; background-clip: padding-box, border-box; box-shadow: 0 0 35px rgba(255, 255, 255, 0.4); animation: holo 3s linear infinite; }
     .tier-Prismatic .aug-tier { background: linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff); -webkit-background-clip: text; color: transparent; }
     @keyframes holo { 100% { filter: hue-rotate(360deg); } }
+    /* 편의 기능 스타일 */
+    #pause-overlay { display: none; position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.6); z-index: 50; flex-direction: column; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+    .btn-pause { background: #e74c3c; } .btn-pause:hover { background: #c0392b; }
   </style>
 </head>
 <body>
@@ -116,10 +119,12 @@
       <div class="stat-badge" id="tier-badge">📈 티어: 1 (EXCEL)</div>
       <div style="margin-left: auto; display:flex;">
         <button class="btn-toolbar btn-full" onclick="goFullscreen()">📱 앱모드</button>
+        <button class="btn-toolbar btn-full" onclick="goFullscreen()">📱 앱모드</button>
         <button class="btn-toolbar btn-quality" id="quality-btn" onclick="toggleQuality()">⚙️ 품질: 높음</button>
         <button class="btn-toolbar" onclick="toggleModal('info-modal')">❓ 타워 설명</button>
         <button class="btn-toolbar" onclick="toggleModal('recipe-modal')">📖 조합표</button>
         <button class="btn-toolbar btn-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()">▶ 패널닫기</button>
+        
       </div>
     </div>
 
@@ -780,6 +785,23 @@
           document.getElementById("go-title").innerText = currentDimName === "DEV" ? "BSOD: CRITICAL_PROCESS_DIED" : "#STACK_OVERFLOW!";
           document.getElementById("final-score").innerText = `최종 티어: ${currentTier} (${currentDimName}) | 버틴 시간: ${Math.floor(gameTime/60)}초`;
           document.getElementById("game-over-overlay").style.display = "flex";
+          // 🎯 사거리 가이드라인 표시 기능 (마우스 오버 시 투명한 원 그리기)
+      if (hoverCol >= 0 && hoverRow >= 0 && hoverCol < COLS && hoverRow < ROWS) {
+        const existing = towers.find(t => t.col === hoverCol && t.row === hoverRow);
+        // 지어진 타워면 현재 사거리, 빈 공간이면 선택된 타워의 1레벨 사거리 표시
+        const specRange = existing ? existing.range : TOWER_SPECS[selectedTower].range;
+        const center = gridToPixel(hoverCol, hoverRow);
+        
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, specRange, 0, Math.PI * 2);
+        ctx.fillStyle = existing ? "rgba(16, 124, 65, 0.15)" : "rgba(255, 255, 255, 0.1)";
+        ctx.fill();
+        ctx.strokeStyle = existing ? "#107c41" : "#aaa";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
           ctx.restore(); requestAnimationFrame(gameLoop); return;
         }
       }
