@@ -354,7 +354,9 @@
       },
       dimShift() { this.playOsc("sine", 800, 50, 2.0, 0.5, 0); },
       error() { this.playOsc("sawtooth", 150, 100, 0.2, 0.1, 0); },
-      upgrade() { this.playOsc("sine", 400, 1200, 0.15, 0.2, 0); }
+      upgrade() { this.playOsc("sine", 400, 1200, 0.15, 0.2, 0); },
+      // 🚨 증강 클릭 시 멈추던 버그 수정 (synergy 소리 추가)
+      synergy() { this.playOsc("sine", 600, 1500, 0.4, 0.2, 0); } 
     };
 
     // --- 5. 게임 루프 및 클래스 객체 ---
