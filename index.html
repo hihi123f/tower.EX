@@ -329,9 +329,26 @@
     };
 
     // --- 엔진 ---
-    const canvas = document.getElementById("gameCanvas"); const ctx = canvas.getContext("2d");
+    // --- 엔진 (고해상도 디스플레이 선명도 패치) ---
+    const canvas = document.getElementById("gameCanvas"); 
+    const ctx = canvas.getContext("2d");
+    
     const CELL_W = 55; const CELL_H = 30; const HEADER_W = 40; const HEADER_H = 25;
     const COLS = 15; const ROWS = 15; const MAX_ENEMIES = 300;
+
+    // 기기 화면 픽셀 비율 가져오기 (보통 스마트폰은 2~3)
+    const dpr = window.devicePixelRatio || 1;
+    
+    // CSS 상의 크기 고정
+    canvas.style.width = "880px";
+    canvas.style.height = "490px";
+    
+    // 캔버스 내부 해상도를 기기 픽셀에 맞춰 확대
+    canvas.width = 880 * dpr;
+    canvas.height = 490 * dpr;
+    
+    // 그림 그릴 때 전체적으로 dpr만큼 확대해서 그리도록 설정
+    ctx.scale(dpr, dpr);
 
     let gameState = 0; let budget = 300; let selectedTower = "SUM";
     let gameTime = 0; let frame = 0; let screenShake = 0; let currentTier = 1; let currentDimName = "EXCEL";
