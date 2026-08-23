@@ -205,7 +205,14 @@
     canvas.width = 880 * dpr; canvas.height = 490 * dpr;
     ctx.scale(dpr, dpr);
 
-    // 모바일 터치 + 고해상도 좌표 계산 완벽 수정
+    // 🚨 [여기가 핵심]: 경로 변수를 캔버스 셋업 바로 아래로 끌어올려 선언 순서 에러를 해결했습니다!
+    const loopOuter = [ { c: 7, r: 1 }, { c: 14, r: 7 }, { c: 7, r: 14 }, { c: 1, r: 7 } ];
+    const loopInner = [ { c: 4, r: 4 }, { c: 11, r: 4 }, { c: 11, r: 11 }, { c: 4, r: 11 } ];
+    function gridToPixel(c, r) { return { x: HEADER_W + c * CELL_W + CELL_W / 2, y: HEADER_H + r * CELL_H + CELL_H / 2 }; }
+    const pathOuterPx = loopOuter.map(p => gridToPixel(p.c, p.r)); 
+    const pathInnerPx = loopInner.map(p => gridToPixel(p.c, p.r));
+
+    // 좌표 계산 함수
     function getGridPos(e) {
       const rect = canvas.getBoundingClientRect();
       let cx = e.clientX; let cy = e.clientY;
