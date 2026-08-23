@@ -30,13 +30,14 @@
     }
     @media screen and (orientation: portrait) { #portrait-warning { display: flex; } #excel-window { display: none !important; } }
 
-    /* PC 정중앙 정렬 및 반응형 사이즈 유지 */
     #excel-window {
-      background: #fff; border: 2px solid #444; box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-      border-radius: 6px; overflow: hidden; height: 590px; width: 1160px;
-      display: flex; flex-direction: column; transform-origin: center center;
-      flex-shrink: 0; /* 🚨 이 한 줄이 화면 강제 잘림 현상을 100% 막아줍니다! */
-    }
+      background: #fff; border: 2px solid #444; box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+      border-radius: 6px; overflow: hidden; height: 590px; width: 1160px;
+      display: flex; flex-direction: column; transform-origin: center center;
+      /* ▼ 이 두 줄이 반드시 있어야 합니다 ▼ */
+      position: absolute; left: 50%; top: 50%;
+      flex-shrink: 0; 
+    }
 
     #title-bar { background: var(--bar-color); color: #fff; padding: 6px 12px; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; transition: background 1s; }
     #toolbar { background: #fdfdfd; padding: 8px 12px; border-bottom: 1px solid var(--excel-border); display: flex; gap: 15px; align-items: center; font-size: 13px; transition: background 1s; }
@@ -215,11 +216,12 @@
     let baseWidth = 1160; 
 
     function resizeWindow() {
-      const win = document.getElementById('excel-window');
-      const scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / 590);
-      win.style.width = baseWidth + "px";
-      win.style.transform = `scale(${scale})`; // PC 중앙정렬 유지
-    }
+      const win = document.getElementById('excel-window');
+      const scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / 590);
+      win.style.width = baseWidth + "px";
+      /* ▼ 반드시 translate(-50%, -50%)가 scale 앞에 있어야 합니다 ▼ */
+      win.style.transform = `translate(-50%, -50%) scale(${scale})`; 
+    }
     window.addEventListener('resize', resizeWindow); 
 
     function toggleSidebar() {
