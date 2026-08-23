@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape" />
+  <!-- ▼ 홈 화면 추가 시 주소창을 없애주는 앱 모드 태그 ▼ -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#111111" />
   <title>Multiverse Defense - Dynamic View Edit</title>
   <style>
     :root {
@@ -30,8 +35,7 @@
       background: #fff; border: 2px solid #444; box-shadow: 0 10px 40px rgba(0,0,0,0.9);
       border-radius: 6px; overflow: hidden; height: 590px;
       display: flex; flex-direction: column;
-      /* ▼ 브라우저 강제 축소 방지를 위한 절대 중앙 정렬 추가 ▼ */
-      position: absolute; left: 50%; top: 50%; 
+      /* ▼ 브라우저 강제 축소 방지를 위한 절대 중앙 정렬 추가 ▼ */ 
       transform-origin: center center;
     }
 
@@ -112,7 +116,8 @@
       <div class="stat-badge">💰 예산: $<span id="budget">300</span></div>
       <div class="stat-badge" id="tier-badge">📈 티어: 1 (EXCEL)</div>
       <div style="margin-left: auto; display:flex;">
-        <!-- ▼ 여기에 품질 조절 버튼이 추가되었습니다 ▼ -->
+        <!-- ▼ 전체화면 버튼 추가 ▼ -->
+        <button class="btn-toolbar" onclick="goFullscreen()" style="background:#8e44ad;">📱 전체화면</button>
         <button class="btn-toolbar btn-quality" id="quality-btn" onclick="toggleQuality()" style="background:#16a085;">⚙️ 품질: 높음</button>
         <button class="btn-toolbar" onclick="toggleModal('info-modal')">❓ 타워 설명</button>
         <button class="btn-toolbar" onclick="toggleModal('recipe-modal')">📖 조합표</button>
@@ -194,8 +199,6 @@
       // ▼ 남는 공간 없이 꽉 차도록 최대치(1) 제한 해제 ▼
       const scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / 590);
       win.style.width = baseWidth + "px";
-      // ▼ absolute 중앙 정렬과 scale 동시 적용 ▼
-      win.style.transform = `translate(-50%, -50%) scale(${scale})`;
     }
     window.addEventListener('resize', resizeWindow); 
 
@@ -215,12 +218,36 @@
       resizeWindow();
     }
 
+    // --- 전체화면 (앱 모드) 전환 함수 ---
+    function goFullscreen() {
+      const doc = document.documentElement;
+      if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (doc.requestFullscreen) doc.requestFullscreen();
+        else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen(); // Safari
+        else if (doc.msRequestFullscreen) doc.msRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      }
+    }
+
+    // --- 🚨 모바일 터치 불가 버그 완벽 수정 ---
     function getGridPos(e) {
       const rect = canvas.getBoundingClientRect();
-      const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-      const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-      const scaleX = canvas.width / rect.width; const scaleY = canvas.height / rect.height;
-      const x = (clientX - rect.left) * scaleX - HEADER_W; const y = (clientY - rect.top) * scaleY - HEADER_H;
+      
+      // 모바일 touch와 PC click 이벤트 좌표 호환성 강화
+      let cx = e.clientX; let cy = e.clientY;
+      if (cx === undefined && e.changedTouches) {
+        cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY;
+      }
+      
+      // 🚨 핵심: canvas.width(DPR로 뻥튀기된 픽셀) 대신, CSS 논리 사이즈인 880, 490 고정값으로 스케일 계산!
+      const scaleX = 880 / rect.width; 
+      const scaleY = 490 / rect.height;
+      
+      const x = (cx - rect.left) * scaleX - HEADER_W; 
+      const y = (cy - rect.top) * scaleY - HEADER_H;
+      
       return { col: Math.floor(x / CELL_W), row: Math.floor(y / CELL_H), isValid: (x >= 0 && y >= 0) };
     }
 
