@@ -3,19 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape" />
-  <title>Excel Synergy Defense</title>
+  <title>Excel Synergy Defense - Ultimate Edit</title>
   <style>
     :root {
-      --excel-green: #107c41;
-      --excel-border: #d4d4d4;
-      --header-bg: #f3f2f1;
-      --hwp-blue: #0078d4;
-      --synergy-gold: #f39c12;
+      --excel-green: #107c41; --excel-border: #d4d4d4; --header-bg: #f3f2f1;
+      --synergy-gold: #f39c12; --hidden-dark: #2c3e50;
     }
     * { box-sizing: border-box; touch-action: none; }
     body {
-      margin: 0; background: #111;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0; background: #111; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       height: 100vh; overflow: hidden; user-select: none; -webkit-user-select: none;
     }
@@ -26,21 +22,17 @@
       flex-direction: column; align-items: center; justify-content: center;
       text-align: center; font-size: 24px; font-weight: bold;
     }
-    @media screen and (orientation: portrait) {
-      #portrait-warning { display: flex; }
-      #excel-window { display: none !important; }
-    }
+    @media screen and (orientation: portrait) { #portrait-warning { display: flex; } #excel-window { display: none !important; } }
 
     #excel-window {
       background: #fff; border: 2px solid #444; box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-      border-radius: 6px; overflow: hidden; width: 820px; height: 645px;
+      border-radius: 6px; overflow: hidden; width: 880px; height: 660px;
       position: relative; transform-origin: center center;
     }
 
     #title-bar {
       background: var(--excel-green); color: #fff; padding: 6px 12px;
       font-size: 13px; font-weight: bold; display: flex; justify-content: space-between;
-      transition: background 1s;
     }
 
     #toolbar {
@@ -49,18 +41,24 @@
     }
     .stat-badge { background: var(--header-bg); border: 1px solid #c8c6c4; padding: 4px 10px; border-radius: 3px; font-weight: bold; }
     
-    .btn-recipe {
-      margin-left: auto; background: #34495e; color: #fff; border: none;
-      padding: 4px 10px; border-radius: 3px; cursor: pointer; font-weight: bold;
+    /* 신호등 텍스트 컬러 */
+    .traffic-green { color: #2ecc71; text-shadow: 0 0 3px #2ecc71; }
+    .traffic-yellow { color: #f39c12; text-shadow: 0 0 3px #f39c12; }
+    .traffic-red { color: #e74c3c; text-shadow: 0 0 5px #e74c3c; animation: blink 1s infinite; }
+    @keyframes blink { 50% { opacity: 0.5; } }
+
+    .btn-toolbar {
+      background: #34495e; color: #fff; border: none; padding: 4px 10px;
+      border-radius: 3px; cursor: pointer; font-weight: bold; margin-left: 5px;
     }
-    .btn-recipe:hover { background: #2c3e50; }
+    .btn-toolbar:hover { background: #2c3e50; }
 
     #tower-selection {
       background: #fafafa; padding: 8px 12px; border-bottom: 1px solid var(--excel-border);
       display: flex; flex-direction: column; gap: 6px;
     }
-    .tower-row { display: flex; gap: 8px; align-items: center; }
-    .tower-row-title { font-size: 11px; font-weight: bold; color: #555; width: 60px; }
+    .tower-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .tower-row-title { font-size: 11px; font-weight: bold; color: #555; width: 55px; }
     
     .tower-btn {
       background: #fff; border: 1px solid var(--excel-border); border-radius: 4px;
@@ -72,6 +70,9 @@
     .tower-btn.synergy { border-color: var(--synergy-gold); color: #d35400; }
     .tower-btn.synergy:hover { background: #fcf3cf; }
     .tower-btn.synergy.active { border: 2px solid #e67e22; background: #fdebd0; }
+    
+    .tower-btn.hidden-t { border-color: #8e44ad; color: #fff; background: #34495e; }
+    .tower-btn.hidden-t.active { border-color: #fff; background: #8e44ad; box-shadow: 0 0 8px #9b59b6; }
 
     #formula-bar {
       display: flex; align-items: center; background: #fff;
@@ -84,7 +85,7 @@
     #fx-icon { font-style: italic; color: #999; margin: 0 8px; font-weight: bold; }
     #formula-input { flex: 1; font-family: monospace; color: #333; font-weight: bold; }
 
-    #game-container { position: relative; width: 820px; height: 500px; background: #fff; }
+    #game-container { position: relative; width: 880px; height: 490px; background: #fff; }
     canvas { display: block; cursor: cell; }
 
     .overlay {
@@ -98,91 +99,106 @@
       font-size: 18px; font-weight: bold; border-radius: 6px; cursor: pointer;
     }
 
-    /* 조합표 모달 */
-    #recipe-modal {
-      display: none; position: absolute; top: 40px; right: 10px;
+    /* 모달 공통 */
+    .modal {
+      display: none; position: absolute; top: 40px; right: 10px; max-height: 430px; overflow-y: auto;
       background: rgba(255, 255, 255, 0.95); border: 2px solid #2c3e50; border-radius: 6px;
-      padding: 15px; width: 320px; z-index: 20; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+      padding: 15px; width: 340px; z-index: 20; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
     }
-    .recipe-item {
-      margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #ccc;
-    }
-    .recipe-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-    .r-title { font-weight: bold; color: #d35400; font-size: 14px; }
-    .r-req { font-size: 11px; color: #555; margin: 3px 0; font-family: monospace; }
-    .r-desc { font-size: 12px; color: #333; }
+    .modal-item { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed #ccc; }
+    .modal-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .m-title { font-weight: bold; font-size: 14px; }
+    .m-sub { font-size: 11px; color: #555; margin: 3px 0; font-family: monospace; font-weight:bold; }
+    .m-desc { font-size: 12px; color: #333; }
   </style>
 </head>
 <body>
 
-  <div id="portrait-warning"><div style="font-size:40px; margin-bottom: 10px;">🔄</div>스마트폰을 가로로 돌려주세요!</div>
+  <div id="portrait-warning"><div style="font-size:40px; margin-bottom:10px;">🔄</div>스마트폰을 가로로 돌려주세요!</div>
 
   <div id="excel-window">
     <div id="title-bar">
-      <span>📊 Synergy_Defense.xlsx - 함수 조합의 시대</span>
+      <span>📊 Synergy_Defense.xlsx - Ultimate Update</span>
       <span>[—] [□] [✕]</span>
     </div>
 
     <div id="toolbar">
-      <div class="stat-badge">⚠️ 트래픽: <span id="enemy-count" style="color:var(--excel-green);">0</span>/300</div>
+      <div class="stat-badge">🚦 트래픽: <span id="enemy-count" class="traffic-green">0</span> / 300</div>
       <div class="stat-badge">💰 예산: $<span id="budget">200</span></div>
       <div class="stat-badge" id="tier-badge">📈 티어: 1</div>
-      <button class="btn-recipe" onclick="toggleRecipe()">📖 조합표 보기</button>
+      <div style="margin-left: auto; display:flex;">
+        <button class="btn-toolbar" onclick="toggleModal('info-modal')">❓ 타워 설명서</button>
+        <button class="btn-toolbar" onclick="toggleModal('recipe-modal')">📖 조합표</button>
+      </div>
     </div>
 
     <div id="tower-selection">
       <div class="tower-row">
-        <div class="tower-row-title">기본 함수</div>
+        <div class="tower-row-title">기본 6종</div>
         <button class="tower-btn active" data-type="SUM">=SUM ($40)</button>
         <button class="tower-btn" data-type="IFERROR">=IFERR ($60)</button>
+        <button class="tower-btn" data-type="MIN">=MIN ($70)</button>
         <button class="tower-btn" data-type="VLOOKUP">=VLOOK ($90)</button>
+        <button class="tower-btn" data-type="AVERAGE">=AVG ($100)</button>
         <button class="tower-btn" data-type="MAX">=MAX ($130)</button>
       </div>
       <div class="tower-row">
         <div class="tower-row-title" style="color:#d35400">시너지</div>
-        <button class="tower-btn synergy" data-type="SUMIF">=SUMIF (SUM+IFERR)</button>
-        <button class="tower-btn synergy" data-type="COUNTIFS">=COUNTIFS (MAX+SUM)</button>
-        <button class="tower-btn synergy" data-type="INDEXMATCH">=INDEXMATCH (VLOOK+MAX)</button>
+        <button class="tower-btn synergy" data-type="SUMIF">=SUMIF</button>
+        <button class="tower-btn synergy" data-type="COUNTIFS">=CNTIFS</button>
+        <button class="tower-btn synergy" data-type="INDEXMATCH">=IDXMAT</button>
+        <button class="tower-btn synergy" data-type="XLOOKUP">=XLOOK</button>
+        <button class="tower-btn synergy" data-type="ISBLANK">=ISBLK</button>
+        <button class="tower-btn synergy" data-type="LARGE">=LARGE</button>
+        <button class="tower-btn synergy" data-type="SMALL">=SMALL</button>
+        <button class="tower-btn hidden-t" data-type="LAMBDA">=LAMBDA(???)</button>
       </div>
     </div>
 
     <div id="formula-bar">
       <div id="name-box">A1</div>
       <div id="fx-icon">fx</div>
-      <div id="formula-input">시너지 타워는 맵에 있는 기본 타워를 재료로 소모하여 설치됩니다.</div>
+      <div id="formula-input">조합 타워는 맵 위의 재료 타워들을 소모하여 완성됩니다. (업글 비용 1.2배로 하향!)</div>
     </div>
 
     <div id="game-container">
-      <canvas id="gameCanvas" width="820" height="500"></canvas>
+      <canvas id="gameCanvas" width="880" height="490"></canvas>
       
+      <!-- 타워 설명서 모달 -->
+      <div id="info-modal" class="modal">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <strong style="font-size:16px;">❓ 기본 타워 설명서</strong>
+          <button onclick="toggleModal('info-modal')" style="cursor:pointer; border:none; background:none; font-weight:bold;">X</button>
+        </div>
+        <div class="modal-item"><div class="m-title" style="color:#107c41">=SUM</div><div class="m-desc">가장 기본적이고 빠른 단일 공격 타워입니다.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#d83b01">=IFERROR</div><div class="m-desc">레이저를 발사하여 적의 이동속도를 늦춥니다.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#3498db">=MIN</div><div class="m-desc">적을 짧은 시간동안 완전히 <b>얼려버립니다 (기절)</b>.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#0078d4">=VLOOKUP</div><div class="m-desc">타격 시 주변 적들에게 광역(Splash) 피해를 줍니다.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#9b59b6">=AVERAGE</div><div class="m-desc">한 번에 <b>여러 명의 적(3명)</b>을 동시에 타격합니다.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#8e44ad">=MAX</div><div class="m-desc">사거리가 맵 전체이며, 묵직하고 강력한 한 방을 쏩니다.</div></div>
+      </div>
+
       <!-- 조합표 모달 -->
-      <div id="recipe-modal">
+      <div id="recipe-modal" class="modal">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
           <strong style="font-size:16px;">📖 시너지 조합 가이드</strong>
-          <button onclick="toggleRecipe()" style="cursor:pointer; border:none; background:none; font-weight:bold;">X</button>
+          <button onclick="toggleModal('recipe-modal')" style="cursor:pointer; border:none; background:none; font-weight:bold;">X</button>
         </div>
-        <div class="recipe-item">
-          <div class="r-title">=SUMIF()</div>
-          <div class="r-req">재료: SUM + IFERROR</div>
-          <div class="r-desc">🛡️ <b>쉴드 관통!</b> 방어력을 무시하고 단일 적에게 치명타를 꽂습니다.</div>
-        </div>
-        <div class="recipe-item">
-          <div class="r-title">=COUNTIFS()</div>
-          <div class="r-req">재료: MAX + SUM</div>
-          <div class="r-desc">🔫 <b>머신건!</b> 매우 빠른 속도로 기관총처럼 연사합니다.</div>
-        </div>
-        <div class="recipe-item">
-          <div class="r-title">=INDEXMATCH()</div>
-          <div class="r-req">재료: VLOOKUP + MAX</div>
-          <div class="r-desc">💥 <b>궁극의 광역폭격!</b> 맵 전체 사거리 + 압도적 범위 폭발.</div>
-        </div>
+        <div class="modal-item"><div class="m-title" style="color:#e67e22">=SUMIF</div><div class="m-sub">SUM + IFERROR</div><div class="m-desc">🛡️ <b>쉴드 관통!</b> 쉴드를 무시하고 체력에 직접 피해.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#1abc9c">=COUNTIFS</div><div class="m-sub">MAX + SUM</div><div class="m-desc">🔫 <b>머신건!</b> 초고속 연사 기관총.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#f1c40f">=INDEXMATCH</div><div class="m-sub">VLOOKUP + MAX</div><div class="m-desc">💥 <b>궁극 광역!</b> 맵 전체 사거리 + 넓은 범위 폭발.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#e74c3c">=XLOOKUP</div><div class="m-sub">VLOOKUP + AVERAGE</div><div class="m-desc">🎆 <b>체인 스플래시!</b> 3발을 쏘고 각각 광역 피해.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#00ced1">=ISBLANK</div><div class="m-sub">IFERROR + MIN</div><div class="m-desc">❄️ <b>절대 영도!</b> 타격 시 범위 안의 모든 적 빙결.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#e84393">=LARGE</div><div class="m-sub">MAX + AVERAGE</div><div class="m-desc">⚡ <b>글로벌 멀티샷!</b> 맵 전체에서 5명의 적 동시 저격.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#fdcb6e">=SMALL</div><div class="m-sub">MIN + SUM</div><div class="m-desc">🧊 <b>연쇄 빙결!</b> 엄청난 속도로 적들을 얼립니다.</div></div>
+        <div class="modal-item"><div class="m-title" style="color:#2c3e50; text-shadow:0 0 2px #8e44ad;">=LAMBDA (HIDDEN)</div><div class="m-sub">VLOOKUP + MAX + IFERROR</div><div class="m-desc">🌌 <b>블랙홀!</b> 3개의 재료가 필요한 초월적 광역+슬로우+관통.</div></div>
       </div>
 
       <div id="start-overlay" class="overlay">
         <h1 style="color: #4cd137;">Excel Synergy Defense</h1>
         <div style="color:#ddd; margin-bottom: 25px; text-align:center; line-height: 1.6;">
-          기본 타워를 조합해 강력한 <b>시너지 타워</b>를 만드세요!<br/>
-          푸른 쉴드를 두른 적과 빠른 적들이 새롭게 등장합니다.
+          기본 타워 6종과 <b>시너지 타워 7종 + 히든 1종</b> 추가 완료!<br/>
+          업그레이드 난이도가 하향되었습니다. 트래픽 신호등을 주시하세요.
         </div>
         <button class="btn-action" onclick="startGame()">▶ 게임 시작</button>
       </div>
@@ -198,11 +214,10 @@
   <script>
     function resizeWindow() {
       const win = document.getElementById('excel-window');
-      const scale = Math.min(window.innerWidth / 820, window.innerHeight / 645, 1);
+      const scale = Math.min(window.innerWidth / 880, window.innerHeight / 660, 1);
       win.style.transform = `scale(${scale})`;
     }
-    window.addEventListener('resize', resizeWindow);
-    resizeWindow();
+    window.addEventListener('resize', resizeWindow); resizeWindow();
 
     function getGridPos(e) {
       const rect = canvas.getBoundingClientRect();
@@ -213,9 +228,13 @@
       return { col: Math.floor(x / CELL_W), row: Math.floor(y / CELL_H), isValid: (x >= 0 && y >= 0) };
     }
 
-    function toggleRecipe() {
-      const modal = document.getElementById('recipe-modal');
-      modal.style.display = modal.style.display === 'block' ? 'none' : 'block';
+    function toggleModal(id) {
+      const modals = ['info-modal', 'recipe-modal'];
+      modals.forEach(m => {
+        const el = document.getElementById(m);
+        if(m === id) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        else el.style.display = 'none';
+      });
     }
 
     // --- 사운드 엔진 ---
@@ -223,7 +242,7 @@
     let audioCtx = null;
     const Sound = {
       lastPlay: {},
-      init() { if (!audioCtx) { audioCtx = new AudioCtx(); } if (audioCtx.state === 'suspended') audioCtx.resume(); },
+      init() { if (!audioCtx) audioCtx = new AudioCtx(); if (audioCtx.state === 'suspended') audioCtx.resume(); },
       canPlay(type, cd) { const now = Date.now(); if (now - (this.lastPlay[type] || 0) > cd) { this.lastPlay[type] = now; return true; } return false; },
       playOsc(type, fStart, fEnd, dur, vol, vEnd) {
         if (!audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
@@ -234,16 +253,18 @@
       },
       shoot(type) {
         if (!this.canPlay(`s_${type}`, 50)) return;
-        if (type === "COUNTIFS") this.playOsc("triangle", 800, 400, 0.05, 0.1, 0.01);
-        else if (type === "INDEXMATCH") this.playOsc("sawtooth", 200, 40, 0.3, 0.2, 0.01);
+        if (type === "COUNTIFS" || type === "SMALL") this.playOsc("triangle", 800, 400, 0.05, 0.1, 0.01);
+        else if (type === "INDEXMATCH" || type === "LARGE" || type === "MAX") this.playOsc("sawtooth", 200, 40, 0.3, 0.2, 0.01);
         else if (type === "SUMIF") this.playOsc("square", 600, 100, 0.1, 0.15, 0.01);
+        else if (type === "MIN" || type === "ISBLANK") this.playOsc("sine", 900, 700, 0.1, 0.15, 0.01); // 얼음 발사음
         else this.playOsc("triangle", 600, 150, 0.08, 0.1, 0.01);
       },
       hit(type, isBoss) {
         if (isBoss) { if(this.canPlay("h_boss", 100)) this.playOsc("square", 100, 20, 0.4, 0.3, 0.01); } 
         else {
           if (!this.canPlay(`h_${type}`, 40)) return;
-          if (type === "INDEXMATCH" || type === "VLOOKUP") this.playOsc("square", 120, 30, 0.2, 0.2, 0.01);
+          if (type.includes("MATCH") || type.includes("LOOKUP") || type.includes("BLANK")) this.playOsc("square", 120, 30, 0.2, 0.2, 0.01);
+          else if (type === "MIN" || type === "SMALL") this.playOsc("sine", 1200, 1000, 0.05, 0.1, 0.01); // 쨍그랑
           else this.playOsc("sine", 350, 80, 0.05, 0.08, 0.01);
         }
       },
@@ -254,186 +275,184 @@
     // --- 게임 기본 세팅 ---
     const canvas = document.getElementById("gameCanvas"); const ctx = canvas.getContext("2d");
     const CELL_W = 55; const CELL_H = 30; const HEADER_W = 40; const HEADER_H = 25;
-    const COLS = 14; const ROWS = 15; const MAX_ENEMIES = 300;
+    const COLS = 15; const ROWS = 15; const MAX_ENEMIES = 300;
 
     let gameState = 0; let budget = 200; let selectedTower = "SUM";
     let gameTime = 0; let frame = 0; let screenShake = 0;
 
-    const loopOuter = [ { c: 7, r: 1 }, { c: 13, r: 7 }, { c: 7, r: 13 }, { c: 1, r: 7 } ];
-    const loopInner = [ { c: 4, r: 4 }, { c: 10, r: 4 }, { c: 10, r: 10 }, { c: 4, r: 10 } ];
+    const loopOuter = [ { c: 7, r: 1 }, { c: 14, r: 7 }, { c: 7, r: 14 }, { c: 1, r: 7 } ];
+    const loopInner = [ { c: 4, r: 4 }, { c: 11, r: 4 }, { c: 11, r: 11 }, { c: 4, r: 11 } ];
     function gridToPixel(c, r) { return { x: HEADER_W + c * CELL_W + CELL_W / 2, y: HEADER_H + r * CELL_H + CELL_H / 2 }; }
     const pathOuterPx = loopOuter.map(p => gridToPixel(p.c, p.r)); const pathInnerPx = loopInner.map(p => gridToPixel(p.c, p.r));
 
-    // 타워 스펙 (기본 + 시너지)
+    // 타워 스펙 (기본 6종 + 시너지 7종 + 히든 1종)
     const TOWER_SPECS = {
       SUM: { cost: 40, range: 110, rate: 16, dmg: 15, color: "#107c41", name: "SUM" },
       IFERROR: { cost: 60, range: 100, rate: 3, dmg: 2, color: "#d83b01", name: "IFERR", isBeam: true },
+      MIN: { cost: 70, range: 100, rate: 45, dmg: 20, color: "#3498db", name: "MIN", stun: 45 },
       VLOOKUP: { cost: 90, range: 145, rate: 50, dmg: 45, color: "#0078d4", name: "VLOOK", splash: 75 },
-      MAX: { cost: 130, range: 400, rate: 75, dmg: 180, color: "#8e44ad", name: "MAX" },
-      
-      // 시너지 타워들
-      SUMIF: { req: ["SUM", "IFERROR"], range: 130, rate: 14, dmg: 80, color: "#e67e22", name: "SUMIF", pierce: true }, // 쉴드 무시
-      COUNTIFS: { req: ["MAX", "SUM"], range: 180, rate: 3, dmg: 35, color: "#1abc9c", name: "CNTIFS" }, // 머신건
-      INDEXMATCH: { req: ["VLOOKUP", "MAX"], range: 500, rate: 65, dmg: 400, color: "#f1c40f", name: "IDXMAT", splash: 120 } // 글로벌 핵
+      AVERAGE: { cost: 100, range: 125, rate: 35, dmg: 15, color: "#9b59b6", name: "AVG", multi: 3 },
+      MAX: { cost: 130, range: 500, rate: 75, dmg: 180, color: "#8e44ad", name: "MAX" },
+
+      SUMIF: { req: ["SUM", "IFERROR"], range: 130, rate: 14, dmg: 80, color: "#e67e22", name: "SUMIF", pierce: true }, 
+      COUNTIFS: { req: ["MAX", "SUM"], range: 180, rate: 4, dmg: 35, color: "#1abc9c", name: "CNTIFS" }, 
+      INDEXMATCH: { req: ["VLOOKUP", "MAX"], range: 500, rate: 65, dmg: 400, color: "#f1c40f", name: "IDXMAT", splash: 120 },
+      XLOOKUP: { req: ["VLOOKUP", "AVERAGE"], range: 160, rate: 40, dmg: 50, color: "#e74c3c", name: "XLOOK", splash: 80, multi: 3 },
+      ISBLANK: { req: ["IFERROR", "MIN"], range: 125, rate: 60, dmg: 40, color: "#00ced1", name: "ISBLK", splash: 100, stun: 60 },
+      LARGE: { req: ["MAX", "AVERAGE"], range: 500, rate: 60, dmg: 150, color: "#e84393", name: "LARGE", multi: 5 },
+      SMALL: { req: ["MIN", "SUM"], range: 130, rate: 12, dmg: 30, color: "#fdcb6e", name: "SMALL", stun: 15 },
+      LAMBDA: { req: ["VLOOKUP", "MAX", "IFERROR"], range: 300, rate: 5, dmg: 150, color: "#2c3e50", name: "LAMBDA", isBeam: true, splash: 120, pierce: true }
     };
 
     let towers = []; let enemies = []; let projectiles = [];
     let particles = []; let floatingTexts = []; let shockwaves = [];
 
-    // --- 적 클래스 (러너, 탱커 쉴드 추가) ---
+    // --- 적 클래스 ---
     class ErrorEnemy {
       constructor(tier, isBoss = false) {
         this.isBoss = isBoss;
-        
-        // 타입 결정 (20% 러너, 30% 탱커, 50% 노멀)
         const rand = Math.random();
         this.type = isBoss ? "BOSS" : (rand < 0.2 ? "RUNNER" : (rand < 0.5 ? "TANK" : "NORMAL"));
         
         this.baseSpeed = 1.3 + Math.min(2.5, tier * 0.1);
         const baseHp = 35 * Math.pow(1.3, tier - 1);
-        
         this.maxShield = 0;
         
-        if (this.type === "RUNNER") {
-          this.tag = "#NAME?"; this.speed = this.baseSpeed * 1.6; this.maxHp = baseHp * 0.5;
-        } else if (this.type === "TANK") {
-          this.tag = "#N/A"; this.speed = this.baseSpeed * 0.7; this.maxHp = baseHp * 0.8; 
-          this.maxShield = baseHp * 1.5; // 체력보다 쉴드가 더 많음
-        } else if (this.type === "BOSS") {
-          this.tag = "#FATAL_CRASH!"; this.speed = 0.7; this.maxHp = baseHp * 15; this.maxShield = baseHp * 10;
-          addShake(15);
-        } else {
-          this.tag = "#VALUE!"; this.speed = this.baseSpeed; this.maxHp = baseHp;
-        }
+        if (this.type === "RUNNER") { this.tag = "#NAME?"; this.speed = this.baseSpeed * 1.6; this.maxHp = baseHp * 0.5; } 
+        else if (this.type === "TANK") { this.tag = "#N/A"; this.speed = this.baseSpeed * 0.7; this.maxHp = baseHp * 0.8; this.maxShield = baseHp * 1.5; } 
+        else if (this.type === "BOSS") { this.tag = "#FATAL!"; this.speed = 0.7; this.maxHp = baseHp * 15; this.maxShield = baseHp * 10; addShake(15); } 
+        else { this.tag = "#VALUE!"; this.speed = this.baseSpeed; this.maxHp = baseHp; }
         
-        this.hp = this.maxHp;
-        this.shield = this.maxShield;
-        this.currentSpeed = this.speed;
+        this.hp = this.maxHp; this.shield = this.maxShield; this.currentSpeed = this.speed;
         this.reward = isBoss ? 300 : (this.type==="TANK" ? 15 : 10);
         this.track = Math.random() > 0.5 ? pathOuterPx : pathInnerPx;
         this.progress = 0; this.hitFlash = 0;
         this.baseScale = isBoss ? 2.2 : (this.type === "TANK" ? 1.2 : (this.type==="RUNNER" ? 0.8 : 1));
-        this.scale = this.baseScale; this.slowTimer = 0;
+        this.scale = this.baseScale; this.stunTimer = 0; this.slowTimer = 0;
         this.updateCoords();
       }
 
       updateCoords() {
         const seg = Math.floor(this.progress) % 4; const nextSeg = (seg + 1) % 4;
         const t = this.progress - Math.floor(this.progress);
-        const p1 = this.track[seg]; const p2 = this.track[nextSeg];
-        this.x = p1.x + (p2.x - p1.x) * t; this.y = p1.y + (p2.y - p1.y) * t;
+        this.x = this.track[seg].x + (this.track[nextSeg].x - this.track[seg].x) * t; 
+        this.y = this.track[seg].y + (this.track[nextSeg].y - this.track[seg].y) * t;
       }
 
       update() {
-        if (this.slowTimer > 0) { this.slowTimer--; if (this.slowTimer <= 0) this.currentSpeed = this.speed; }
-        if (this.hitFlash > 0) this.hitFlash--;
+        if (this.stunTimer > 0) { 
+          this.stunTimer--; this.hitFlash = Math.max(this.hitFlash, 1); // 얼어있는 이펙트 유지
+        } else {
+          if (this.slowTimer > 0) { this.slowTimer--; if (this.slowTimer <= 0) this.currentSpeed = this.speed; }
+          this.progress = (this.progress + (this.currentSpeed / 400)) % 4;
+        }
+        if (this.hitFlash > 0 && this.stunTimer <= 0) this.hitFlash--;
         if (this.scale > this.baseScale) this.scale -= 0.05;
-        this.progress = (this.progress + (this.currentSpeed / 400)) % 4;
         this.updateCoords();
       }
 
-      takeDamage(dmg, pierce = false) {
+      takeDamage(dmg, pierce = false, stunTime = 0) {
+        if (stunTime > 0) this.stunTimer = Math.max(this.stunTimer, stunTime);
+        
         let actualDmg = dmg;
-        // 쉴드가 있고, 관통(pierce) 공격이 아닐 때 쉴드 먼저 차감
         if (this.shield > 0 && !pierce) {
-          if (actualDmg > this.shield) {
-            actualDmg -= this.shield; this.shield = 0; this.hp -= actualDmg;
-          } else {
-            this.shield -= actualDmg;
-          }
-        } else {
-          // 관통 공격이거나 쉴드가 없으면 체력 직접 타격
-          this.hp -= actualDmg;
-        }
+          if (actualDmg > this.shield) { actualDmg -= this.shield; this.shield = 0; this.hp -= actualDmg; } 
+          else { this.shield -= actualDmg; }
+        } else { this.hp -= actualDmg; }
 
-        this.hitFlash = 3; this.scale = this.baseScale * 1.2;
-        if (Math.random() > 0.4) {
-          // 관통 공격시 노란색 대미지 텍스트
-          floatingTexts.push(new FloatingText(this.x, this.y - 15, Math.round(dmg), pierce ? "#f1c40f" : "#fff", pierce));
-        }
+        this.hitFlash = this.stunTimer > 0 ? 1 : 3; 
+        this.scale = this.baseScale * 1.2;
+        if (Math.random() > 0.4) floatingTexts.push(new FloatingText(this.x, this.y - 15, Math.round(dmg), pierce ? "#f1c40f" : "#fff", pierce));
       }
 
       draw() {
         ctx.save(); ctx.translate(this.x, this.y); ctx.scale(this.scale, this.scale);
-        const bgColor = this.hitFlash > 0 ? "#fff" : (this.isBoss ? "#3e0000" : "#ffebee");
-        const borderColor = this.hitFlash > 0 ? "#ff0000" : "#e53935";
+        // 얼어있으면 파란색 테두리
+        const isStunned = this.stunTimer > 0;
+        const bgColor = this.hitFlash > 0 ? (isStunned ? "#e0f7fa" : "#fff") : (this.isBoss ? "#3e0000" : "#ffebee");
+        const borderColor = isStunned ? "#00bcd4" : (this.hitFlash > 0 ? "#ff0000" : "#e53935");
         
         ctx.fillStyle = bgColor; ctx.strokeStyle = borderColor;
         ctx.lineWidth = this.hitFlash > 0 ? 2 : 1;
         ctx.fillRect(-22, -9, 44, 18); ctx.strokeRect(-22, -9, 44, 18);
 
-        ctx.fillStyle = this.hitFlash > 0 ? "#000" : "#b71c1c";
+        ctx.fillStyle = this.hitFlash > 0 && !isStunned ? "#000" : (isStunned ? "#0097a7" : "#b71c1c");
         ctx.font = this.isBoss ? "bold 8px monospace" : "bold 9px monospace";
         ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(this.tag, 0, 0);
 
-        // 체력 & 쉴드 바
-        ctx.fillStyle = "#555"; ctx.fillRect(-18, -16, 36, 4); // 배경
-        
-        const hpRatio = Math.max(0, this.hp / this.maxHp);
-        ctx.fillStyle = "#e53935"; ctx.fillRect(-18, -14, 36 * hpRatio, 2); // 빨간 체력
-        
-        if (this.maxShield > 0) {
-          const shRatio = Math.max(0, this.shield / this.maxShield);
-          ctx.fillStyle = "#3498db"; // 푸른 쉴드 색상
-          ctx.fillRect(-18, -16, 36 * shRatio, 2); 
-        }
+        ctx.fillStyle = "#555"; ctx.fillRect(-18, -16, 36, 4); 
+        ctx.fillStyle = "#e53935"; ctx.fillRect(-18, -14, 36 * Math.max(0, this.hp / this.maxHp), 2); 
+        if (this.maxShield > 0) { ctx.fillStyle = "#3498db"; ctx.fillRect(-18, -16, 36 * Math.max(0, this.shield / this.maxShield), 2); }
         ctx.restore();
       }
     }
 
-    // --- 타워 (시너지 포함) ---
+    // --- 타워 ---
     class Tower {
       constructor(col, row, type) {
-        this.col = col; this.row = row;
-        const pos = gridToPixel(col, row);
-        this.x = pos.x; this.y = pos.y;
-        this.type = type;
-        this.baseSpec = TOWER_SPECS[type];
-        this.isSynergy = !!this.baseSpec.req; // 요구사항이 있으면 시너지 타워
-        this.level = 1;
-        this.updateStats();
+        this.col = col; this.row = row; const pos = gridToPixel(col, row);
+        this.x = pos.x; this.y = pos.y; this.type = type; this.baseSpec = TOWER_SPECS[type];
+        this.isSynergy = !!this.baseSpec.req; this.level = 1; this.updateStats();
         this.cooldown = 0; this.recoil = 0; this.laserTarget = null;
       }
 
       updateStats() {
-        this.dmg = this.baseSpec.dmg * Math.pow(1.4, this.level - 1);    
-        // 시너지 타워는 기본 업그레이드 비용이 비쌈
-        const baseCost = this.isSynergy ? 200 : this.baseSpec.cost;
-        this.upgradeCost = Math.floor(baseCost * Math.pow(1.4, this.level));
+        this.dmg = this.baseSpec.dmg * Math.pow(1.35, this.level - 1);    
+        // 업그레이드 비용 계수 1.2배로 하향 조정 (기존 1.4배)
+        const baseCost = this.isSynergy ? (this.baseSpec.req.length > 2 ? 300 : 150) : this.baseSpec.cost;
+        this.upgradeCost = Math.floor(baseCost * Math.pow(1.2, this.level));
         this.range = this.baseSpec.range * (1 + (this.level - 1) * 0.05); 
-        this.rate = Math.max(2, this.baseSpec.rate - (this.level - 1) * 2);
+        this.rate = Math.max(2, this.baseSpec.rate - (this.level - 1) * 1.5);
         this.displayName = `${this.baseSpec.name} L${this.level}`;
       }
 
       upgrade() {
         if (budget >= this.upgradeCost) {
-          budget -= this.upgradeCost; this.level++; this.updateStats();
-          Sound.upgrade();
-          floatingTexts.push(new FloatingText(this.x, this.y - 20, "UP!", this.baseSpec.color, true, 20));
-          return true;
+          budget -= this.upgradeCost; this.level++; this.updateStats(); Sound.upgrade();
+          floatingTexts.push(new FloatingText(this.x, this.y - 20, "UP!", this.baseSpec.color, true, 20)); return true;
         }
         return false;
       }
 
       update() {
         if (this.recoil > 0) this.recoil--; if (this.cooldown > 0) this.cooldown--;
-        let target = null; let minDist = this.range;
-
-        for (let enemy of enemies) {
-          const d = Math.hypot(enemy.x - this.x, enemy.y - this.y);
-          if (d <= minDist) { if (!target || enemy.isBoss || (!target.isBoss && d < minDist)) { minDist = d; target = enemy; } }
+        
+        let targets = [];
+        if (this.baseSpec.multi) {
+          // 다중 타겟 (AVERAGE, XLOOKUP, LARGE)
+          targets = enemies.filter(e => Math.hypot(e.x - this.x, e.y - this.y) <= this.range)
+                           .sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y))
+                           .slice(0, this.baseSpec.multi);
+        } else {
+          // 단일 타겟 (보스 우선)
+          let best = null; let minDist = this.range;
+          for (let e of enemies) {
+            const d = Math.hypot(e.x - this.x, e.y - this.y);
+            if (d <= minDist) { if (!best || e.isBoss || (!best.isBoss && d < minDist)) { minDist = d; best = e; } }
+          }
+          if (best) targets.push(best);
         }
 
-        if (this.baseSpec.isBeam) {
-          this.laserTarget = target;
-          if (target && this.cooldown === 0) {
-            target.takeDamage(this.dmg, this.baseSpec.pierce);
-            target.currentSpeed = target.speed * Math.max(0.2, 0.45 - (this.level * 0.02));
-            target.slowTimer = 10; this.cooldown = this.rate; Sound.hit("SUM"); 
+        if (this.baseSpec.isBeam && targets.length > 0) {
+          this.laserTarget = targets[0]; // 빔은 단일 타겟만 시각화
+          if (this.cooldown === 0) {
+            targets.forEach(t => {
+              t.takeDamage(this.dmg, this.baseSpec.pierce);
+              if (this.baseSpec.splash) {
+                // LAMBDA 폭발 처리
+                enemies.forEach(e => {
+                  if (e !== t && Math.hypot(e.x - t.x, e.y - t.y) <= this.baseSpec.splash) e.takeDamage(this.dmg * 0.5, true);
+                });
+                shockwaves.push(new Shockwave(t.x, t.y, this.baseSpec.splash, this.baseSpec.color));
+              }
+              t.currentSpeed = t.speed * Math.max(0.1, 0.4 - (this.level * 0.02)); t.slowTimer = 10; 
+            });
+            this.cooldown = this.rate; Sound.hit("SUM"); 
           }
         } else {
-          if (target && this.cooldown === 0) {
-            projectiles.push(new Projectile(this.x, this.y, target, this));
+          this.laserTarget = null;
+          if (targets.length > 0 && this.cooldown === 0) {
+            targets.forEach(t => projectiles.push(new Projectile(this.x, this.y, t, this)));
             this.cooldown = this.rate; this.recoil = 5; Sound.shoot(this.type);
           }
         }
@@ -441,19 +460,18 @@
 
       draw() {
         const cellLeft = HEADER_W + this.col * CELL_W; const cellTop = HEADER_H + this.row * CELL_H;
-
-        // 시너지 타워는 배경색이 다름
-        ctx.fillStyle = this.isSynergy ? "#fdebd0" : (this.level > 1 ? `hsla(${this.level*25}, 80%, 75%, 0.3)` : "#e8f5e9");
+        ctx.fillStyle = this.type === "LAMBDA" ? "#111" : (this.isSynergy ? "#fdebd0" : (this.level > 1 ? `hsla(${this.level*25}, 80%, 75%, 0.3)` : "#e8f5e9"));
         ctx.fillRect(cellLeft + 1, cellTop + 1, CELL_W - 2, CELL_H - 2);
 
-        ctx.strokeStyle = this.baseSpec.color; ctx.lineWidth = this.recoil > 0 ? 4 : 2;
-        ctx.strokeRect(cellLeft + 1, cellTop + 1, CELL_W - 2, CELL_H - 2);
+        ctx.strokeStyle = this.type === "LAMBDA" ? "#8e44ad" : this.baseSpec.color; 
+        ctx.lineWidth = this.recoil > 0 ? 4 : 2; ctx.strokeRect(cellLeft + 1, cellTop + 1, CELL_W - 2, CELL_H - 2);
 
-        ctx.fillStyle = this.baseSpec.color; ctx.font = "bold 9px sans-serif";
+        ctx.fillStyle = this.type === "LAMBDA" ? "#fff" : this.baseSpec.color; ctx.font = "bold 9px sans-serif";
         ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(this.displayName, this.x, this.y);
 
         if (this.baseSpec.isBeam && this.laserTarget && enemies.includes(this.laserTarget)) {
-          ctx.strokeStyle = this.baseSpec.color; ctx.lineWidth = 2 + Math.min(3, this.level * 0.3) + Math.random();
+          ctx.strokeStyle = this.type === "LAMBDA" ? "#8e44ad" : this.baseSpec.color; 
+          ctx.lineWidth = 2 + Math.min(3, this.level * 0.3) + Math.random();
           ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.laserTarget.x, this.laserTarget.y); ctx.stroke();
         }
       }
@@ -462,14 +480,13 @@
     class Projectile {
       constructor(x, y, target, tower) {
         this.x = x; this.y = y; this.target = target; this.tower = tower;
-        this.speed = tower.type.includes("MAX") ? 18 : (tower.baseSpec.splash ? 8 : 12);
+        this.speed = tower.type.includes("MAX") || tower.type.includes("LARGE") ? 20 : (tower.baseSpec.splash ? 8 : 12);
       }
       update() {
         if (!enemies.includes(this.target)) return true;
         const dx = this.target.x - this.x; const dy = this.target.y - this.y;
         if (Math.hypot(dx, dy) < 15) { this.hit(); return true; }
-        this.x += (dx / Math.hypot(dx, dy)) * this.speed; this.y += (dy / Math.hypot(dx, dy)) * this.speed;
-        return false;
+        this.x += (dx / Math.hypot(dx, dy)) * this.speed; this.y += (dy / Math.hypot(dx, dy)) * this.speed; return false;
       }
       hit() {
         if (this.tower.baseSpec.splash) {
@@ -478,19 +495,20 @@
           shockwaves.push(new Shockwave(this.x, this.y, splashRange, this.tower.baseSpec.color));
           enemies.forEach(e => {
             if (Math.hypot(e.x - this.x, e.y - this.y) <= splashRange) {
-              e.takeDamage(this.tower.dmg * (1 - (Math.hypot(e.x - this.x, e.y - this.y) / splashRange) * 0.3), this.tower.baseSpec.pierce);
+              const falloff = 1 - (Math.hypot(e.x - this.x, e.y - this.y) / splashRange) * 0.3;
+              e.takeDamage(this.tower.dmg * falloff, this.tower.baseSpec.pierce, this.tower.baseSpec.stun || 0);
             }
           });
           for (let i = 0; i < 6; i++) particles.push(new Particle(this.x, this.y, this.tower.baseSpec.color, 4));
         } else {
           Sound.hit(this.tower.type, this.target.isBoss);
-          this.target.takeDamage(this.tower.dmg, this.tower.baseSpec.pierce);
+          this.target.takeDamage(this.tower.dmg, this.tower.baseSpec.pierce, this.tower.baseSpec.stun || 0);
           for (let i = 0; i < 3; i++) particles.push(new Particle(this.x, this.y, this.tower.baseSpec.color, 3));
         }
       }
       draw() {
         ctx.fillStyle = this.tower.baseSpec.color;
-        if (this.tower.baseSpec.splash || this.tower.type.includes("MAX")) {
+        if (this.tower.baseSpec.splash || this.tower.type.includes("MAX") || this.tower.type.includes("LARGE")) {
           ctx.beginPath(); ctx.arc(this.x, this.y, this.tower.baseSpec.splash ? 5 : 4, 0, Math.PI * 2); ctx.fill();
         } else { ctx.font = "bold 14px monospace"; ctx.fillText(";", this.x, this.y); }
       }
@@ -534,7 +552,7 @@
       ctx.setLineDash([]);
     }
 
-    // --- 타워 조합 및 설치 로직 ---
+    // --- 인터랙션 로직 ---
     document.querySelectorAll(".tower-btn").forEach(btn => {
       btn.addEventListener("pointerdown", (e) => {
         Sound.init(); document.querySelectorAll(".tower-btn").forEach(b => b.classList.remove("active"));
@@ -548,43 +566,28 @@
       const existing = towers.find(t => t.col === pos.col && t.row === pos.row);
       const spec = TOWER_SPECS[selectedTower];
 
-      // 1. 조합 타워 설치 시도
       if (spec.req) {
-        // 재료가 맵에 존재하는지 검사
-        const requiredTypes = spec.req.slice();
-        const towersToRemove = [];
-        
-        // 클릭한 곳에 타워가 있다면, 그것이 재료 중 하나인지 먼저 확인하여 포함
+        const requiredTypes = spec.req.slice(); const towersToRemove = [];
         if (existing && requiredTypes.includes(existing.type)) {
-          towersToRemove.push(existing);
-          requiredTypes.splice(requiredTypes.indexOf(existing.type), 1);
+          towersToRemove.push(existing); requiredTypes.splice(requiredTypes.indexOf(existing.type), 1);
         }
-
-        // 나머지 재료 찾기
         for (let reqType of requiredTypes) {
           const found = towers.find(t => t.type === reqType && !towersToRemove.includes(t));
           if (found) towersToRemove.push(found);
           else {
             floatingTexts.push(new FloatingText(pos.col*CELL_W + HEADER_W + 20, pos.row*CELL_H + HEADER_H, "재료 부족!", "#e74c3c", true, 30));
-            Sound.error(); return; // 재료 부족
+            Sound.error(); return; 
           }
         }
-
-        // 재료 소모
         towersToRemove.forEach(t => {
           const idx = towers.indexOf(t); if(idx > -1) towers.splice(idx, 1);
-          // 파괴 이펙트
           for(let i=0; i<8; i++) particles.push(new Particle(t.x, t.y, "#888", 3));
         });
-
-        // 시너지 타워 생성
-        towers.push(new Tower(pos.col, pos.row, selectedTower));
-        Sound.synergy();
-        floatingTexts.push(new FloatingText(pos.col*CELL_W + HEADER_W + 20, pos.row*CELL_H + HEADER_H, "SYNERGY!", spec.color, true, 40));
+        towers.push(new Tower(pos.col, pos.row, selectedTower)); Sound.synergy();
+        floatingTexts.push(new FloatingText(pos.col*CELL_W + HEADER_W + 20, pos.row*CELL_H + HEADER_H, selectedTower === "LAMBDA" ? "HIDDEN!!" : "SYNERGY!", spec.color, true, 40));
         updateUI(); return;
       }
 
-      // 2. 일반 타워 설치/업글 시도
       if (existing) { existing.upgrade(); updateUI(); return; }
       if (budget >= spec.cost) { budget -= spec.cost; towers.push(new Tower(pos.col, pos.row, selectedTower)); updateUI(); }
     });
@@ -602,7 +605,11 @@
 
     function updateUI() {
       const el = document.getElementById("enemy-count"); el.innerText = enemies.length;
-      if (enemies.length >= 250) el.classList.add("danger"); else el.classList.remove("danger");
+      el.className = ""; // 신호등 색상 초기화
+      if (enemies.length < 100) el.classList.add("traffic-green");
+      else if (enemies.length < 200) el.classList.add("traffic-yellow");
+      else el.classList.add("traffic-red");
+      
       document.getElementById("budget").innerText = budget;
       document.getElementById("tier-badge").innerText = `📈 티어: ${Math.floor(gameTime / 600) + 1}`;
     }
@@ -618,12 +625,9 @@
       if (gameState !== 1) return; frame++; gameTime++;
       ctx.save();
       if (screenShake > 0) { ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake); screenShake *= 0.85; if (screenShake < 0.5) screenShake = 0; }
-      
       ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, canvas.width, canvas.height); drawExcelGrid();
 
       const tier = Math.floor(gameTime / 600) + 1;
-      
-      // 보스 출현 (5티어 마다)
       if (frame % 3000 === 0) { enemies.push(new ErrorEnemy(tier, true)); }
 
       const spawnInterval = Math.max(15, 60 - tier * 3);
@@ -656,7 +660,6 @@
       ctx.restore(); if (frame % 10 === 0) updateUI();
       if (gameState === 1) requestAnimationFrame(gameLoop);
     }
-    
     drawExcelGrid();
   </script>
 </body>
