@@ -3,49 +3,42 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape" />
-  <title>Multiverse Defense - Widescreen Mobile Edit</title>
+  <title>Multiverse Defense - Dynamic View Edit</title>
   <style>
     :root {
       --bar-color: #107c41; --excel-border: #d4d4d4; --header-bg: #f3f2f1;
       --epic-color: #d35400; --ancient-color: #8e44ad;
     }
-    * { box-sizing: border-box; touch-action: none; }
+    
+    /* 오류 수정: 모든 요소에 touch-action: none 적용 시 모바일에서 버튼 클릭이 씹히는 현상 제거 */
+    * { box-sizing: border-box; }
     body {
       margin: 0; background: #111; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       height: 100vh; overflow: hidden; user-select: none; -webkit-user-select: none;
     }
 
-    /* 세로모드 경고창 */
     #portrait-warning {
       display: none; position: absolute; top:0; left:0; right:0; bottom:0;
       background: #107c41; color: white; z-index: 9999;
       flex-direction: column; align-items: center; justify-content: center;
       text-align: center; font-size: 24px; font-weight: bold;
     }
-    @media screen and (orientation: portrait) { 
-      #portrait-warning { display: flex; } 
-      #excel-window { display: none !important; } 
-    }
+    @media screen and (orientation: portrait) { #portrait-warning { display: flex; } #excel-window { display: none !important; } }
 
-    /* ★ 와이드스크린 레이아웃 크기 변경 (1160 x 590) */
+    /* 유동적 레이아웃을 위한 기본 스타일 */
     #excel-window {
       background: #fff; border: 2px solid #444; box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-      border-radius: 6px; overflow: hidden; width: 1160px; height: 590px;
+      border-radius: 6px; overflow: hidden; height: 590px;
+      display: flex; flex-direction: column;
       position: relative; transform-origin: center center;
     }
 
-    #title-bar {
-      background: var(--bar-color); color: #fff; padding: 6px 12px;
-      font-size: 13px; font-weight: bold; display: flex; justify-content: space-between;
-      transition: background 1s;
-    }
-
-    #toolbar {
-      background: #fdfdfd; padding: 8px 12px; border-bottom: 1px solid var(--excel-border);
-      display: flex; gap: 15px; align-items: center; font-size: 13px; transition: background 1s;
-    }
-    .stat-badge { background: var(--header-bg); border: 1px solid #c8c6c4; padding: 4px 10px; border-radius: 3px; font-weight: bold; transition: all 1s; }
+    #title-bar { background: var(--bar-color); color: #fff; padding: 6px 12px; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; transition: background 1s; }
+    
+    #toolbar { background: #fdfdfd; padding: 8px 12px; border-bottom: 1px solid var(--excel-border); display: flex; gap: 15px; align-items: center; font-size: 13px; transition: background 1s; }
+    
+    .stat-badge { background: var(--header-bg); border: 1px solid #c8c6c4; padding: 4px 10px; border-radius: 3px; font-weight: bold; transition: all 1s; white-space: nowrap; }
     
     .traffic-green { color: #2ecc71; text-shadow: 0 0 3px #2ecc71; }
     .traffic-yellow { color: #f39c12; text-shadow: 0 0 3px #f39c12; }
@@ -54,18 +47,22 @@
 
     .btn-toolbar { background: #34495e; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-left: 5px; }
     .btn-toolbar:hover { background: #2c3e50; }
+    .btn-toggle { background: #e67e22; }
+    .btn-toggle:hover { background: #d35400; }
 
     #formula-bar { display: flex; align-items: center; background: #fff; border-bottom: 1px solid var(--excel-border); padding: 4px 8px; font-size: 13px; transition: background 1s; }
     #name-box { border: 1px solid #c8c6c4; padding: 2px 6px; background: #fafafa; font-family: monospace; width: 50px; text-align: center; overflow: hidden; }
     #fx-icon { font-style: italic; color: #999; margin: 0 8px; font-weight: bold; }
     #formula-input { flex: 1; font-family: monospace; font-weight: bold; }
 
-    /* ★ 캔버스와 사이드바를 가로로 배치 */
-    #game-body { display: flex; height: 490px; }
+    /* 게임부 레이아웃 (가로 분할) */
+    #game-body { display: flex; flex: 1; }
+    
     #game-container { position: relative; width: 880px; height: 490px; background: #fff; flex-shrink: 0; }
-    canvas { display: block; cursor: cell; }
+    /* 캔버스에만 터치 스크롤 방지 적용 */
+    canvas { display: block; cursor: cell; touch-action: none; }
 
-    /* ★ 사이드바(타워 선택 UI) 디자인 개편 */
+    /* 우측 사이드바 (조합 패널) */
     #tower-selection {
       width: 280px; background: #fafafa; border-left: 1px solid var(--excel-border);
       padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px;
@@ -93,7 +90,7 @@
     .overlay h1 { margin: 0 0 15px 0; color: #fff; font-size: 32px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
     .btn-action { background: #107c41; color: #fff; border: none; padding: 15px 40px; font-size: 18px; font-weight: bold; border-radius: 6px; cursor: pointer; }
 
-    .modal { display: none; position: absolute; top: 10px; right: 290px; max-height: 470px; overflow-y: auto; background: rgba(255, 255, 255, 0.95); border: 2px solid #2c3e50; border-radius: 6px; padding: 15px; width: 340px; z-index: 20; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+    .modal { display: none; position: absolute; top: 10px; left: 10px; max-height: 470px; overflow-y: auto; background: rgba(255, 255, 255, 0.95); border: 2px solid #2c3e50; border-radius: 6px; padding: 15px; width: 340px; z-index: 20; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
     .modal::-webkit-scrollbar { width: 6px; } .modal::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
     .modal-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #ccc; } .modal-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     .m-title { font-weight: bold; font-size: 13px; } .m-sub { font-size: 10px; color: #555; margin: 2px 0; font-family: monospace; font-weight:bold; } .m-desc { font-size: 11px; color: #333; }
@@ -105,7 +102,7 @@
 
   <div id="excel-window">
     <div id="title-bar">
-      <span id="win-title">📊 Multiverse_Defense.xlsx - 와이드스크린 에디션</span>
+      <span id="win-title">📊 Multiverse_Defense.xlsx - 패널 뷰 에디션</span>
       <span>[—] [□] [✕]</span>
     </div>
 
@@ -116,13 +113,14 @@
       <div style="margin-left: auto; display:flex;">
         <button class="btn-toolbar" onclick="toggleModal('info-modal')">❓ 타워 설명</button>
         <button class="btn-toolbar" onclick="toggleModal('recipe-modal')">📖 조합표</button>
+        <button class="btn-toolbar btn-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()">▶ 패널 닫기</button>
       </div>
     </div>
 
     <div id="formula-bar">
       <div id="name-box">A1</div>
       <div id="fx-icon">fx</div>
-      <div id="formula-input" style="color:var(--bar-color);">조합 시 80% 예산 환불! 티어(Tier)가 오르면 새로운 차원이 열립니다.</div>
+      <div id="formula-input" style="color:var(--bar-color);">우측 '패널 닫기'를 누르면 맵을 꽉 찬 화면으로 볼 수 있습니다!</div>
     </div>
 
     <div id="game-body">
@@ -142,10 +140,9 @@
         <div id="start-overlay" class="overlay">
           <h1 style="color: #4cd137;">Multiverse Defense</h1>
           <div style="color:#ddd; margin-bottom: 25px; text-align:center; line-height: 1.6;">
-            <b>📱 모바일 와이드스크린 최적화 완료!</b><br/><br/>
-            <b>Tier 30 (HWP) ➡️ Tier 60 (PPT) ➡️ Tier 90 (DEV/BSOD)</b><br/>
-            차원이 변할 때마다 무적 패턴과 흉악한 레이드 보스가 등장합니다.<br/>
-            총 25종의 타워를 조합하여 최후의 블루스크린을 막아내세요!
+            <b>🖥️ 클릭/터치 오류 수정 및 화면 확장 지원!</b><br/><br/>
+            <b>Tier 30 (HWP) ➡️ Tier 60 (PPT) ➡️ Tier 90 (DEV)</b><br/>
+            '▶ 패널 닫기' 버튼을 눌러 화면을 다이나믹하게 넓혀보세요.<br/>
           </div>
           <button class="btn-action" onclick="startGame()">▶ 게임 시작</button>
         </div>
@@ -163,13 +160,33 @@
   </div>
 
   <script>
-    // ★ 반응형 스케일링 (1160x590 와이드 기준)
+    // ★ 동적 화면 스케일링 로직
+    let sidebarOpen = true;
+    let baseWidth = 1160; // 사이드바 열려있을 때 전체 폭
+
     function resizeWindow() {
       const win = document.getElementById('excel-window');
-      const scale = Math.min(window.innerWidth / 1160, window.innerHeight / 590, 1);
+      const scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / 590, 1);
+      win.style.width = baseWidth + "px";
       win.style.transform = `scale(${scale})`;
     }
-    window.addEventListener('resize', resizeWindow); resizeWindow();
+    window.addEventListener('resize', resizeWindow); 
+
+    function toggleSidebar() {
+      sidebarOpen = !sidebarOpen;
+      const sidebar = document.getElementById("tower-selection");
+      const btn = document.getElementById("sidebar-toggle-btn");
+      if (sidebarOpen) {
+        sidebar.style.display = "flex";
+        btn.innerText = "▶ 패널 닫기";
+        baseWidth = 1160;
+      } else {
+        sidebar.style.display = "none";
+        btn.innerText = "◀ 패널 열기";
+        baseWidth = 880; // 패널이 닫히면 전체 창을 880px로 줄이고 화면 꽉 차게 스케일업!
+      }
+      resizeWindow();
+    }
 
     function getGridPos(e) {
       const rect = canvas.getBoundingClientRect();
@@ -187,7 +204,7 @@
       });
     }
 
-    // --- 차원 테마 데이터 (3배수 수정 완료) ---
+    // --- 차원 테마 데이터 (30 배수) ---
     const DIMENSIONS = {
       EXCEL: { bg: "#fff", grid: "#e0e0e0", text: "#555", bar: "#107c41", title: "📊 Multiverse_Defense.xlsx", mobs: ["#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#N/A"], boss: "#FATAL_ERROR!" },
       HWP:   { bg: "#f0f8ff", grid: "#cce0ff", text: "#0078d4", bar: "#0078d4", title: "📘 HWP_Invasion.hwp - 한글의 역습", mobs: ["표_깨짐", "맑은고딕", "빨간줄", "응답없음", "배포용문서"], boss: "최종_진짜최종.hwp" },
@@ -216,7 +233,7 @@
       VLOOKUP: { type:"base", cost: 90, range: 145, rate: 50, dmg: 45, color: "#0078d4", name: "VLOOK", splash: 75, desc:"주변 적 광역(Splash) 타격" },
       AVERAGE: { type:"base", cost: 100, range: 125, rate: 35, dmg: 15, color: "#9b59b6", name: "AVG", multi: 3, desc:"3명의 적을 동시 타격" },
       MAX: { type:"base", cost: 130, range: 500, rate: 75, dmg: 180, color: "#8e44ad", name: "MAX", desc:"사거리 맵 전체의 묵직한 한 방" },
-      // 에픽 (15종)
+      
       SUMIF: { type:"epic", req: ["SUM", "IFERROR"], range: 130, rate: 14, dmg: 80, color: "#e67e22", name: "SUMIF", pierce: true, desc:"방어 쉴드 무시 직접 타격" },
       COUNTIFS: { type:"epic", req: ["MAX", "SUM"], range: 180, rate: 4, dmg: 35, color: "#1abc9c", name: "CNTIFS", desc:"초고속 연사 기관총" },
       INDEXMATCH: { type:"epic", req: ["VLOOKUP", "MAX"], range: 500, rate: 65, dmg: 400, color: "#f1c40f", name: "IDXMAT", splash: 120, desc:"맵 전체 사거리 + 넓은 범위 폭발" },
@@ -232,7 +249,7 @@
       MATCH: { type:"epic", req: ["MIN", "VLOOKUP"], range: 140, rate: 50, dmg: 50, color: "#2980b9", name: "MATCH", splash: 90, stun: 30, desc:"폭발하며 주변 적까지 얼리는 폭탄" },
       MEDIAN: { type:"epic", req: ["MIN", "AVERAGE"], range: 140, rate: 40, dmg: 30, color: "#16a085", name: "MEDIAN", multi: 4, stun: 40, desc:"4명의 적을 동시 기절시키는 멀티프리즈" },
       FLOOR: { type:"epic", req: ["MIN", "MAX"], range: 500, rate: 70, dmg: 200, color: "#7f8c8d", name: "FLOOR", stun: 80, desc:"초장거리에서 확정적으로 적 하나를 장기 기절" },
-      // 고대/히든 (4종)
+      
       LET: { type:"ancient", req: ["SUM", "MAX", "AVERAGE"], range: 500, rate: 45, dmg: 250, color: "#f39c12", name: "LET", multi: 8, desc:"[고대] 궤도 폭격기. 전역 8명 동시 타격" },
       FILTER: { type:"ancient", req: ["MIN", "VLOOKUP", "IFERROR"], range: 300, rate: 5, dmg: 80, color: "#3498db", name: "FILTER", isBeam: true, splash: 200, stun: 60, desc:"[고대] 블리자드. 초광역 빙결+슬로우 필드" },
       RANDARRAY: { type:"ancient", req: ["SUM", "MIN", "MAX"], range: 300, rate: 5, dmg: 100, color: "#e84393", name: "RAND", stun: 10, desc:"[고대] 카오스 머신건. 무차별 연사" },
@@ -243,7 +260,7 @@
       const container = document.getElementById('tower-selection');
       const baseRow = document.createElement('div'); baseRow.className = 'tower-row'; baseRow.innerHTML = `<div class="tower-row-title" style="color:#27ae60">기본 (1조합)</div>`;
       const epicRow = document.createElement('div'); epicRow.className = 'tower-row'; epicRow.innerHTML = `<div class="tower-row-title" style="color:var(--epic-color)">에픽 (2조합)</div>`;
-      const ancRow = document.createElement('div'); ancRow.className = 'tower-row'; ancRow.innerHTML = `<div class="tower-row-title" style="color:var(--ancient-color)">고대 / 히든 (3조합)</div>`;
+      const ancRow = document.createElement('div'); ancRow.className = 'tower-row'; ancRow.innerHTML = `<div class="tower-row-title" style="color:var(--ancient-color)">고대/히든 (3조합)</div>`;
       
       let infoHTML = ''; let recipeHTML = '';
       for (let key in TOWER_SPECS) {
@@ -253,7 +270,7 @@
         if(t.type === 'base') { label += ` ($${t.cost})`; baseRow.appendChild(btn); infoHTML += `<div class="modal-item"><div class="m-title" style="color:${t.color}">=${key}</div><div class="m-desc">${t.desc}</div></div>`; } 
         else if (t.type === 'epic') { epicRow.appendChild(btn); } 
         else if (t.type === 'ancient') { ancRow.appendChild(btn); } 
-        else if (t.type === 'hidden') { btn.className = `tower-btn hidden-t`; label = "=LAMBDA(??)"; ancRow.appendChild(btn); }
+        else if (t.type === 'hidden') { btn.className = `tower-btn hidden-t`; label = "=LAMBDA"; ancRow.appendChild(btn); }
         btn.innerText = label;
 
         if (t.req) { recipeHTML += `<div class="modal-item"><div class="m-title" style="color:${t.type==='hidden'?'#2c3e50':t.color}">=${key}</div><div class="m-sub">${t.req.join(' + ')}</div><div class="m-desc">${t.desc}</div></div>`; }
@@ -264,19 +281,28 @@
       document.querySelectorAll(".tower-btn").forEach(btn => {
         btn.addEventListener("pointerdown", () => { Sound.init(); document.querySelectorAll(".tower-btn").forEach(b => b.classList.remove("active")); btn.classList.add("active"); selectedTower = btn.dataset.type; });
       });
+      resizeWindow();
     }
 
-    // --- 사운드 ---
+    // --- 사운드 (예외처리 강화) ---
     let audioCtx = null;
     const Sound = {
       lastPlay: {},
-      init() { if (!audioCtx) audioCtx = new AudioCtx(); if (audioCtx.state === 'suspended') audioCtx.resume(); },
+      init() { 
+        try {
+          if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+          if (audioCtx.state === 'suspended') audioCtx.resume(); 
+        } catch(e) {}
+      },
       canPlay(type, cd) { const now = Date.now(); if (now - (this.lastPlay[type] || 0) > cd) { this.lastPlay[type] = now; return true; } return false; },
       playOsc(t, f1, f2, dur, v1, v2) {
-        if (!audioCtx) return; const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime;
-        osc.type = t; osc.frequency.setValueAtTime(f1, now); osc.frequency.exponentialRampToValueAtTime(Math.max(f2, 1), now + dur);
-        gain.gain.setValueAtTime(v1 * 0.3, now); gain.gain.linearRampToValueAtTime(v2, now + dur); osc.start(now); osc.stop(now + dur);
+        if (!audioCtx) return; 
+        try {
+          const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+          osc.connect(gain); gain.connect(audioCtx.destination); const now = audioCtx.currentTime;
+          osc.type = t; osc.frequency.setValueAtTime(f1, now); osc.frequency.exponentialRampToValueAtTime(Math.max(f2, 1), now + dur);
+          gain.gain.setValueAtTime(v1 * 0.3, now); gain.gain.linearRampToValueAtTime(v2, now + dur); osc.start(now); osc.stop(now + dur);
+        } catch(e) {}
       },
       shoot(t) {
         if (!this.canPlay(`s_${t}`, 50)) return;
@@ -595,15 +621,16 @@
       }
     }
 
-    function startGame() { Sound.init(); document.getElementById("start-overlay").style.display = "none"; gameState = 1; requestAnimationFrame(gameLoop); }
-    function restartGame() {
+    // 전역 스코프 할당 (모바일 브라우저 안정성 향상)
+    window.startGame = function() { Sound.init(); document.getElementById("start-overlay").style.display = "none"; gameState = 1; requestAnimationFrame(gameLoop); };
+    window.restartGame = function() {
       Sound.init(); document.getElementById("game-over-overlay").style.display = "none";
       towers = []; enemies = []; projectiles = []; particles = []; floatingTexts = []; shockwaves = [];
       budget = 300; gameTime = 0; frame = 0; screenShake = 0; currentTier = 1; currentDimName = "EXCEL";
       document.documentElement.style.setProperty('--bar-color', '#107c41');
-      document.getElementById('win-title').innerText = "📊 Multiverse_Defense.xlsx - 와이드스크린 에디션";
+      document.getElementById('win-title').innerText = "📊 Multiverse_Defense.xlsx - 패널 뷰 에디션";
       updateUI(); gameState = 1;
-    }
+    };
 
     function gameLoop() {
       if (gameState !== 1) return; frame++; gameTime++;
@@ -650,7 +677,7 @@
       if (gameState === 1) requestAnimationFrame(gameLoop);
     }
     
-    initUI(); drawExcelGrid(DIMENSIONS.EXCEL);
+    window.onload = () => { initUI(); drawExcelGrid(DIMENSIONS.EXCEL); };
   </script>
 </body>
 </html>
