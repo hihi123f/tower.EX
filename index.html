@@ -62,7 +62,22 @@
     #game-container { position: relative; width: 880px; height: 490px; background: #fff; flex-shrink: 0; }
     canvas { display: block; cursor: cell; touch-action: none; outline: none; } /* 캔버스 터치 최적화 */
 
-    #tower-selection { width: 280px; background: #fafafa; border-left: 1px solid var(--excel-border); padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+    /* 사이드바 스크롤 최적화 (버튼이 안 잘리도록 여백 추가) */
+    #tower-selection { width: 280px; background: #fafafa; border-left: 1px solid var(--excel-border); padding: 10px; padding-bottom: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+
+    /* ▼ 조합 가능한 타워 반짝임 효과 추가 ▼ */
+    @keyframes glow-gold {
+      0% { box-shadow: 0 0 5px #f1c40f, inset 0 0 5px #f1c40f; border-color: #f1c40f; }
+      50% { box-shadow: 0 0 15px #f39c12, inset 0 0 10px #f39c12; border-color: #f39c12; }
+      100% { box-shadow: 0 0 5px #f1c40f, inset 0 0 5px #f1c40f; border-color: #f1c40f; }
+    }
+    .tower-btn.ready-to-craft {
+      animation: glow-gold 1.5s infinite;
+      color: #b8860b !important;
+      background-color: #fffde7 !important;
+      font-weight: 900 !important;
+      border-width: 2px;
+    }
     #tower-selection::-webkit-scrollbar { width: 6px; } #tower-selection::-webkit-scrollbar-thumb { background: #bbb; border-radius: 4px; }
     .tower-row { display: flex; flex-wrap: wrap; gap: 6px; }
     .tower-row-title { width: 100%; font-size: 13px; font-weight: bold; border-bottom: 2px solid #ddd; padding-bottom: 4px; margin-bottom: 2px; }
@@ -115,11 +130,15 @@
     </div>
 
     <div id="toolbar">
-      <div class="stat-badge">🚦 트래픽: <span id="enemy-count" class="traffic-green">0</span> / 300</div>
-      <div class="stat-badge">💰 예산: $<span id="budget">300</span></div>
-      <div class="stat-badge" id="tier-badge">📈 티어: 1 (EXCEL)</div>
+      <!-- ▼ 모바일 편의성: 상태창 터치 시 일시정지 ▼ -->
+      <div style="display:flex; gap:15px; cursor:pointer;" onclick="togglePause()">
+        <div class="stat-badge">🚦 트래픽: <span id="enemy-count" class="traffic-green">0</span> / 300</div>
+        <div class="stat-badge">💰 예산: $<span id="budget">300</span></div>
+        <div class="stat-badge" id="tier-badge">📈 티어: 1 (EXCEL)</div>
+      </div>
       <div style="margin-left: auto; display:flex;">
         <button class="btn-toolbar btn-full" onclick="goFullscreen()">📱 앱모드</button>
+        <button class="btn-toolbar btn-pause" onclick="togglePause()">⏸️ 일시정지</button>
         <button class="btn-toolbar btn-quality" id="quality-btn" onclick="toggleQuality()">⚙️ 품질: 높음</button>
         <button class="btn-toolbar" onclick="toggleModal('info-modal')">❓ 타워 설명</button>
         <button class="btn-toolbar" onclick="toggleModal('recipe-modal')">📖 조합표</button>
@@ -152,13 +171,21 @@
             <b>🛠️ 최종 완성본 적용 완료</b><br/><br/>
             - 타워를 <b>길게 터치(우클릭)</b>하면 70% 환불 후 철거됩니다.<br/>
             - 렉 방지를 원하면 <b>[⚙️ 품질: 낮음]</b>으로 설정하세요.<br/>
-            - 전체 화면을 원하면 <b>[📱 앱모드]</b>를 누르세요.
+            - 폰 화면 왼쪽 위 [상태창]을 터치하면 <b>일시정지</b> 됩니다.
           </div>
           <button class="btn-action" onclick="startGame()">▶ 게임 시작</button>
         </div>
 
-        <!-- 증강 선택 화면 -->
-        <div id="augment-overlay">
+        <div id="pause-overlay" class="overlay">
+          <h1 style="color: #ff9f43;">⏸️ 일시정지됨</h1>
+          <div style="color:#ddd; margin-bottom: 25px; text-align:center; font-size: 16px;">
+            화장실 다녀오세요!<br/><br/>
+            <span style="font-size:13px; color:#aaa;">(모바일: 상단 상태창 터치 / PC: 스페이스바)</span>
+          </div>
+          <button class="btn-action" onclick="togglePause()">▶ 다시 시작</button>
+        </div>
+
+        <div id="augment-overlay" class="overlay" style="z-index: 100;">
           <div class="aug-title-text">✨ 아수라장 증강 선택 ✨</div>
           <div id="augment-cards-container"></div>
         </div>
@@ -827,11 +854,34 @@
         ctx.strokeStyle = existing ? "#107c41" : "#aaa"; ctx.lineWidth = 1; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
       }
 
+      // 🌟 [신규 패치] 조합 가능 타워 체크 & 버튼 반짝임 효과
+      if (frame % 30 === 0) { // 매 0.5초(30프레임)마다 검사해서 렉 방지
+        const currentTowerTypes = towers.map(t => t.type); // 현재 맵에 지어진 타워 종류들
+        
+        document.querySelectorAll(".tower-btn").forEach(btn => {
+          const tType = btn.dataset.type;
+          const spec = TOWER_SPECS[tType];
+          
+          if (spec.req) { // 조합(시너지) 타워일 경우만 검사
+            let canCraft = true;
+            const requiredTemp = spec.req.slice(); // 필요한 재료 복사본
+            const currentTemp = currentTowerTypes.slice(); // 현재 지어진 타워 복사본
+            
+            for (let req of requiredTemp) {
+              const idx = currentTemp.indexOf(req);
+              if (idx > -1) { currentTemp.splice(idx, 1); } // 재료가 있으면 목록에서 뺌
+              else { canCraft = false; break; } // 하나라도 없으면 실패
+            }
+
+            if (canCraft) { btn.classList.add("ready-to-craft"); } 
+            else { btn.classList.remove("ready-to-craft"); }
+          }
+        });
+      }
+
       ctx.restore(); if (frame % 10 === 0) updateUI();
       if (gameState === 1) requestAnimationFrame(gameLoop);
     }
-    
-    window.onload = () => { initUI(); drawExcelGrid(DIMENSIONS.EXCEL); };
   </script>
 </body>
 </html>
