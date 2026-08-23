@@ -782,10 +782,15 @@
       }
     });
 
+    // --- 7. 메인 루프 제어 (120Hz 폰 터치 시 2배속 방지 60FPS 고정 패치) ---
+    let lastFrameTime = performance.now(); // 프레임 고정용 타이머
+
     window.startGame = function() { 
       goFullscreen(); Sound.init(); 
       document.getElementById("start-overlay").style.display = "none"; 
-      gameState = 1; requestAnimationFrame(gameLoop); 
+      gameState = 1; 
+      lastFrameTime = performance.now(); // 시작 시 타이머 초기화
+      requestAnimationFrame(gameLoop); 
     };
 
     window.restartGame = function() {
@@ -795,10 +800,21 @@
       document.documentElement.style.setProperty('--bar-color', '#107c41');
       document.getElementById('win-title').innerText = "📊 Multiverse_Defense.xlsx - Ultimate Edition";
       updateUI(); gameState = 1;
+      lastFrameTime = performance.now(); // 재시작 시 타이머 초기화
+      requestAnimationFrame(gameLoop); 
     };
 
-    function gameLoop() {
-      if (gameState !== 1) return; frame++; gameTime++;
+    function gameLoop(timestamp) {
+      if (gameState !== 1) return; 
+      requestAnimationFrame(gameLoop); // 무조건 다음 프레임 예약부터 걸기
+
+      // 🚨 [핵심 패치] 화면이 120Hz로 가속되어도 1초에 60번(16.6ms)만 실행하도록 강제 제한!
+      if (!timestamp) timestamp = performance.now();
+      const delta = timestamp - lastFrameTime;
+      if (delta < 16) return; // 16ms보다 빨리 실행되려고 하면 스킵 (무시)
+      lastFrameTime = timestamp - (delta % 16); // 정확한 60프레임 간격 유지
+
+      frame++; gameTime++;
       ctx.save();
       if (screenShake > 0) { ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake); screenShake *= 0.85; if (screenShake < 0.5) screenShake = 0; }
       
@@ -818,7 +834,7 @@
           document.getElementById("go-title").innerText = currentDimName === "DEV" ? "BSOD: CRITICAL_PROCESS_DIED" : "#STACK_OVERFLOW!";
           document.getElementById("final-score").innerText = `최종 티어: ${currentTier} (${currentDimName}) | 버틴 시간: ${Math.floor(gameTime/60)}초`;
           document.getElementById("game-over-overlay").style.display = "flex";
-          ctx.restore(); requestAnimationFrame(gameLoop); return;
+          ctx.restore(); return; // 🚨 게임오버 시 루프 종료
         }
       }
 
@@ -854,25 +870,21 @@
         ctx.strokeStyle = existing ? "#107c41" : "#aaa"; ctx.lineWidth = 1; ctx.setLineDash([5, 5]); ctx.stroke(); ctx.setLineDash([]);
       }
 
-      // 🌟 [신규 패치] 조합 가능 타워 체크 & 버튼 반짝임 효과
-      if (frame % 30 === 0) { // 매 0.5초(30프레임)마다 검사해서 렉 방지
-        const currentTowerTypes = towers.map(t => t.type); // 현재 맵에 지어진 타워 종류들
-        
+      // 🌟 조합 가능 타워 체크 & 버튼 반짝임 효과
+      if (frame % 30 === 0) { 
+        const currentTowerTypes = towers.map(t => t.type); 
         document.querySelectorAll(".tower-btn").forEach(btn => {
           const tType = btn.dataset.type;
           const spec = TOWER_SPECS[tType];
-          
-          if (spec.req) { // 조합(시너지) 타워일 경우만 검사
+          if (spec.req) { 
             let canCraft = true;
-            const requiredTemp = spec.req.slice(); // 필요한 재료 복사본
-            const currentTemp = currentTowerTypes.slice(); // 현재 지어진 타워 복사본
-            
+            const requiredTemp = spec.req.slice(); 
+            const currentTemp = currentTowerTypes.slice(); 
             for (let req of requiredTemp) {
               const idx = currentTemp.indexOf(req);
-              if (idx > -1) { currentTemp.splice(idx, 1); } // 재료가 있으면 목록에서 뺌
-              else { canCraft = false; break; } // 하나라도 없으면 실패
+              if (idx > -1) { currentTemp.splice(idx, 1); } 
+              else { canCraft = false; break; } 
             }
-
             if (canCraft) { btn.classList.add("ready-to-craft"); } 
             else { btn.classList.remove("ready-to-craft"); }
           }
@@ -880,6 +892,7 @@
       }
 
       ctx.restore(); if (frame % 10 === 0) updateUI();
+    }
       if (gameState === 1) requestAnimationFrame(gameLoop);
     }
   </script>
