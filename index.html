@@ -552,7 +552,7 @@
       const idx = towers.findIndex(t => t.col === pos.col && t.row === pos.row);
       if (idx > -1) {
         const t = towers[idx]; 
-        const refund = Math.floor(t.totalSpent * 0.7);
+        const refund = Math.floor(t.totalSpent * 0.7); // 70% 환불
         budget += refund; 
         towers.splice(idx, 1);
         
@@ -563,18 +563,25 @@
       }
     }
 
-    canvas.addEventListener("contextmenu", (e) => { e.preventDefault(); if (gameState === 1) handleSell(e); });
+    // 1. PC 우클릭 판매
+    canvas.addEventListener("contextmenu", (e) => { 
+      e.preventDefault(); 
+      if (gameState === 1) handleSell(e); 
+    });
 
+    // 2. 모바일 터치 (길게 누르기 vs 짧은 터치)
     let pressTimer = null; 
     let isLongPressed = false; 
     let startX, startY;
     
+    // 손가락이 닿을 때 (타이머 시작)
     canvas.addEventListener("pointerdown", (e) => {
       if (gameState !== 1 || e.button === 2) return; 
       isLongPressed = false; startX = e.clientX; startY = e.clientY;
       pressTimer = setTimeout(() => { isLongPressed = true; handleSell(e); }, 400); 
     });
 
+    // 손가락을 움직일 때 (화면을 드래그하면 판매 취소)
     canvas.addEventListener("pointermove", (e) => {
       if (pressTimer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) { clearTimeout(pressTimer); pressTimer = null; }
       if (gameState !== 1) return; 
@@ -588,9 +595,10 @@
       }
     });
 
+    // 손가락을 뗄 때 (타워 설치 및 조합)
     canvas.addEventListener("pointerup", (e) => {
       if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-      if (gameState !== 1 || e.button === 2 || isLongPressed) return;
+      if (gameState !== 1 || e.button === 2 || isLongPressed) return; // 길게 눌렀다면 여기서 멈춤
       Sound.init();
 
       const pos = getGridPos(e); if (!pos.isValid || pos.col >= COLS || pos.row >= ROWS) return;
