@@ -435,9 +435,12 @@
         const baseCost = this.isSynergy ? (this.baseSpec.req.length > 2 ? 300 : 150) : this.baseSpec.cost;
         this.upgradeCost = Math.floor(baseCost * Math.pow(1.2, this.level));
         this.range = this.baseSpec.range * (1 + (this.level - 1) * 0.05); 
-        this.rate = Math.max(2, this.baseSpec.rate - (this.level - 1) * 1.5);
+        
+        // 🚨 [긴급 패치 1]: 연사력이 소수점이 되지 않도록 Math.round() 처리
+        this.rate = Math.max(2, Math.round(this.baseSpec.rate - (this.level - 1) * 1.5));
         this.displayName = `${this.baseSpec.name} L${this.level}`;
       }
+
       upgrade() {
         if (budget >= this.upgradeCost) {
           budget -= this.upgradeCost; this.totalSpent += this.upgradeCost; 
@@ -445,8 +448,11 @@
           floatingTexts.push(new FloatingText(this.x, this.y - 20, "UP!", this.baseSpec.color, true, 20)); return true;
         } return false;
       }
+
       update() {
-        if (this.recoil > 0) this.recoil--; if (this.cooldown > 0) this.cooldown--;
+        if (this.recoil > 0) this.recoil--; 
+        if (this.cooldown > 0) this.cooldown--;
+        
         let targets = [];
         if (this.baseSpec.multi) {
           targets = enemies.filter(e => Math.hypot(e.x - this.x, e.y - this.y) <= this.range)
@@ -459,7 +465,8 @@
 
         if (this.baseSpec.isBeam && targets.length > 0) {
           this.laserTargets = targets;
-          if (this.cooldown === 0) {
+          // 🚨 [긴급 패치 2]: 정확히 0이 아니라 0 이하(<= 0)일 때 발사하도록 조건 변경
+          if (this.cooldown <= 0) {
             targets.forEach(t => {
               t.takeDamage(this.dmg, this.baseSpec.pierce, this.baseSpec.stun || 0);
               if (this.baseSpec.splash) {
@@ -472,7 +479,8 @@
           }
         } else {
           this.laserTargets = [];
-          if (targets.length > 0 && this.cooldown === 0) {
+          // 🚨 [긴급 패치 2]: <= 0 으로 변경
+          if (targets.length > 0 && this.cooldown <= 0) {
             targets.forEach(t => projectiles.push(new Projectile(this.x, this.y, t, this)));
             this.cooldown = this.rate; this.recoil = 5; Sound.shoot(this.type);
           }
