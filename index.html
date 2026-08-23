@@ -2,14 +2,17 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>Excel Infinite Defense - Boss & Upgrade</title>
+  <!-- 모바일 뷰포트 & 터치 확대 방지 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, orientation=landscape" />
+  <title>Excel vs HWP - Multiverse Defense</title>
   <style>
     :root {
       --excel-green: #107c41;
       --excel-border: #d4d4d4;
       --header-bg: #f3f2f1;
+      --hwp-blue: #0078d4;
     }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; touch-action: none; /* 모바일 스와이프 방지 */ }
     body {
       margin: 0;
       background: #111;
@@ -17,18 +20,44 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding: 15px;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
       user-select: none;
+      -webkit-user-select: none;
     }
 
+    /* 세로 모드일 때 경고 화면 */
+    #portrait-warning {
+      display: none;
+      position: absolute;
+      top:0; left:0; right:0; bottom:0;
+      background: #107c41;
+      color: white;
+      z-index: 9999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+    }
+    @media screen and (orientation: portrait) {
+      #portrait-warning { display: flex; }
+      #excel-window { display: none !important; }
+    }
+
+    /* 반응형 스케일링을 위한 래퍼 */
     #excel-window {
       background: #fff;
       border: 2px solid #444;
       box-shadow: 0 10px 40px rgba(0,0,0,0.9);
-      border-radius: 4px;
+      border-radius: 6px;
       overflow: hidden;
       width: 820px;
+      height: 605px;
       position: relative;
+      transform-origin: center center;
     }
 
     #title-bar {
@@ -39,6 +68,7 @@
       font-weight: bold;
       display: flex;
       justify-content: space-between;
+      transition: background 1s;
     }
 
     #toolbar {
@@ -56,6 +86,7 @@
       padding: 4px 10px;
       border-radius: 3px;
       font-weight: bold;
+      white-space: nowrap;
     }
     .danger { color: #d83b01 !important; }
 
@@ -64,24 +95,21 @@
       padding: 8px 12px;
       border-bottom: 1px solid var(--excel-border);
       display: flex;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
     }
     .tower-btn {
       background: #fff;
       border: 1px solid var(--excel-border);
       border-radius: 4px;
-      padding: 6px 12px;
+      padding: 6px 8px;
       cursor: pointer;
       font-size: 12px;
       font-weight: bold;
       transition: all 0.2s;
     }
     .tower-btn:hover { background: #e8f5e9; border-color: var(--excel-green); }
-    .tower-btn.active {
-      border: 2px solid var(--excel-green);
-      background: #c8e6c9;
-    }
+    .tower-btn.active { border: 2px solid var(--excel-green); background: #c8e6c9; }
 
     #formula-bar {
       display: flex;
@@ -99,7 +127,6 @@
       width: 50px;
       text-align: center;
       overflow: hidden;
-      white-space: nowrap;
     }
     #fx-icon { font-style: italic; color: #999; margin: 0 8px; font-weight: bold; }
     #formula-input { flex: 1; font-family: monospace; color: #333; font-weight: bold; }
@@ -112,7 +139,6 @@
     }
     canvas { display: block; cursor: cell; }
 
-    /* 화면 오버레이 (시작 & 게임오버) */
     .overlay {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -123,72 +149,67 @@
       background: rgba(0,0,0,0.85);
       z-index: 10;
     }
-    .overlay h1 {
-      margin: 0 0 20px 0;
-      color: #fff;
-      font-size: 32px;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.5);
-    }
+    .overlay h1 { margin: 0 0 15px 0; color: #fff; font-size: 32px; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
     .overlay.game-over h1 { color: #ff5252; }
     
     .btn-action {
       background: var(--excel-green);
       color: #fff;
       border: none;
-      padding: 12px 30px;
+      padding: 15px 40px;
       font-size: 18px;
       font-weight: bold;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
       box-shadow: 0 4px 15px rgba(16, 124, 65, 0.4);
-      transition: transform 0.1s, background 0.2s;
     }
-    .btn-action:hover { background: #0c6334; transform: translateY(-2px); }
-    .btn-action:active { transform: translateY(0); }
+    .btn-action:active { transform: scale(0.95); }
   </style>
 </head>
 <body>
 
+  <div id="portrait-warning">
+    <div style="font-size:40px; margin-bottom: 10px;">🔄</div>
+    스마트폰을 가로로 돌려주세요!
+  </div>
+
   <div id="excel-window">
     <div id="title-bar">
-      <span>📊 Infinite_Defense_Boss.xlsx - 무한 엑셀 디펜스</span>
+      <span>📊 Multiverse_Defense.xlsx - 한글문서의 침공</span>
       <span>[—] [□] [✕]</span>
     </div>
 
     <div id="toolbar">
-      <div class="stat-badge">⚠️ 에러 과부하: <span id="enemy-count" style="color:var(--excel-green);">0</span> / 300</div>
+      <div class="stat-badge">⚠️ 트래픽: <span id="enemy-count" style="color:var(--excel-green);">0</span>/300</div>
       <div class="stat-badge">💰 예산: $<span id="budget">150</span></div>
-      <div class="stat-badge">📈 티어(Tier): <span id="tier-level">1</span></div>
+      <div class="stat-badge" id="tier-badge">📈 티어: 1</div>
     </div>
 
     <div id="formula-bar">
       <div id="name-box">A1</div>
       <div id="fx-icon">fx</div>
-      <div id="formula-input">빈 셀 클릭: 타워 설치 🔨 | 기존 타워 클릭: 무한 레벨업 ⬆️</div>
+      <div id="formula-input">빈 칸: 설치 | 타워: 레벨업 | 10티어부터 '다른 차원' 열림</div>
     </div>
 
     <div id="tower-selection">
-      <button class="tower-btn active" data-type="SUM">=SUM() ($40 · 고속)</button>
-      <button class="tower-btn" data-type="IFERROR">=IFERROR() ($60 · 슬로우)</button>
-      <button class="tower-btn" data-type="VLOOKUP">=VLOOKUP() ($90 · 폭발)</button>
-      <button class="tower-btn" data-type="MAX">=MAX() ($130 · 초장거리 저격)</button>
+      <button class="tower-btn active" data-type="SUM">=SUM ($40)</button>
+      <button class="tower-btn" data-type="IFERROR">=IFERR ($60)</button>
+      <button class="tower-btn" data-type="VLOOKUP">=VLOOK ($90)</button>
+      <button class="tower-btn" data-type="MAX">=MAX ($130)</button>
     </div>
 
     <div id="game-container">
       <canvas id="gameCanvas" width="820" height="540"></canvas>
       
-      <!-- 시작 화면 -->
       <div id="start-overlay" class="overlay">
-        <h1 style="color: #4cd137;">Excel Infinite Defense</h1>
-        <div style="color:#ddd; margin-bottom: 30px; text-align:center; line-height: 1.6;">
-          에러들이 마름모와 사각형 트랙을 무한 순환합니다.<br/>
-          타워를 계속 레벨업 시키며 <b>300개</b>가 쌓이기 전까지 버티세요!<br/>
-          (주의: 5티어마다 <b>거대 보스</b>가 등장합니다)
+        <h1 style="color: #4cd137;">멀티버스 엑셀 디펜스</h1>
+        <div style="color:#ddd; margin-bottom: 25px; text-align:center; line-height: 1.6;">
+          후반으로 갈수록 이펙트와 사운드가 겹치지 않게 안정화됩니다.<br/>
+          <b>Tier 10</b>을 넘기면 '한글(HWP) 차원'의 침공이 시작됩니다!<br/>
         </div>
         <button class="btn-action" onclick="startGame()">▶ 게임 시작</button>
       </div>
 
-      <!-- 게임 오버 화면 -->
       <div id="game-over-overlay" class="overlay" style="display: none;">
         <h1>#STACK_OVERFLOW!</h1>
         <div id="final-score" style="color:#fff; margin-bottom: 25px; font-size: 18px;"></div>
@@ -198,16 +219,53 @@
   </div>
 
   <script>
-    // --- 오디오 엔진 ---
+    // --- 화면 자동 스케일링 (모바일 대응) ---
+    function resizeWindow() {
+      const win = document.getElementById('excel-window');
+      // 화면이 820x605 보다 작으면 축소, 크면 원래 크기 유지
+      const scale = Math.min(window.innerWidth / 820, window.innerHeight / 605, 1);
+      win.style.transform = `scale(${scale})`;
+    }
+    window.addEventListener('resize', resizeWindow);
+    resizeWindow();
+
+    // 터치/클릭 좌표 추출 헬퍼 (스케일링 팩터 고려)
+    function getGridPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+      const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+      
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      
+      const x = (clientX - rect.left) * scaleX - HEADER_W;
+      const y = (clientY - rect.top) * scaleY - HEADER_H;
+      return { 
+        col: Math.floor(x / CELL_W), 
+        row: Math.floor(y / CELL_H),
+        isValid: (x >= 0 && y >= 0)
+      };
+    }
+
+    // --- 사운드 엔진 (중첩 폭주 방지 쓰로틀링 적용) ---
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
 
-    function initAudio() {
-      if (!audioCtx) audioCtx = new AudioCtx();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-    }
-
     const Sound = {
+      lastPlay: {},
+      init() {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+      },
+      // 소리가 너무 겹쳐서 찢어지지 않도록 같은 타입 소리는 쿨타임(ms) 적용
+      canPlay(type, cooldownMs) {
+        const now = Date.now();
+        if (now - (this.lastPlay[type] || 0) > cooldownMs) {
+          this.lastPlay[type] = now;
+          return true;
+        }
+        return false;
+      },
       playOsc(type, freqStart, freqEnd, duration, vol, volEnd) {
         if (!audioCtx) return;
         const osc = audioCtx.createOscillator();
@@ -217,26 +275,33 @@
         osc.type = type;
         osc.frequency.setValueAtTime(freqStart, now);
         osc.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 1), now + duration);
-        gain.gain.setValueAtTime(vol, now);
+        // 마스터 볼륨 자체를 기존보다 낮춤 (눈갱/귀갱 방지)
+        gain.gain.setValueAtTime(vol * 0.5, now);
         gain.gain.linearRampToValueAtTime(volEnd, now + duration);
         osc.start(now); osc.stop(now + duration);
       },
       shoot(type) {
-        if (type === "SUM") this.playOsc("triangle", 600, 150, 0.08, 0.15, 0.01);
-        else if (type === "VLOOKUP") this.playOsc("sawtooth", 250, 60, 0.2, 0.2, 0.01);
-        else if (type === "MAX") this.playOsc("square", 800, 200, 0.15, 0.25, 0.01); // 묵직한 저격 소리
+        if (!this.canPlay(`shoot_${type}`, 50)) return; // 0.05초 내 중복 방지
+        if (type === "SUM") this.playOsc("triangle", 600, 150, 0.08, 0.1, 0.01);
+        else if (type === "VLOOKUP") this.playOsc("sawtooth", 250, 60, 0.2, 0.1, 0.01);
+        else if (type === "MAX") this.playOsc("square", 800, 200, 0.15, 0.15, 0.01);
       },
       hit(type, isBoss = false) {
-        if (isBoss) this.playOsc("square", 100, 20, 0.5, 0.4, 0.01); // 보스 피격/사망음
-        else if (type === "VLOOKUP") this.playOsc("square", 120, 30, 0.3, 0.3, 0.01);
-        else if (type === "MAX") this.playOsc("sawtooth", 150, 50, 0.2, 0.3, 0.01);
-        else this.playOsc("sine", 350, 80, 0.05, 0.1, 0.01);
+        if (isBoss) {
+          if (!this.canPlay("hit_boss", 100)) return;
+          this.playOsc("square", 100, 20, 0.4, 0.3, 0.01);
+        } else {
+          if (!this.canPlay(`hit_${type}`, 40)) return; // 잡몹 피격음 쓰로틀링
+          if (type === "VLOOKUP") this.playOsc("square", 120, 30, 0.2, 0.2, 0.01);
+          else if (type === "MAX") this.playOsc("sawtooth", 150, 50, 0.2, 0.2, 0.01);
+          else this.playOsc("sine", 350, 80, 0.05, 0.08, 0.01);
+        }
       },
       upgrade() { this.playOsc("sine", 400, 1200, 0.15, 0.2, 0); },
-      bossSpawn() { this.playOsc("sawtooth", 50, 20, 1.5, 0.5, 0); } // 웅장한 보스 등장음
+      dimensionShift() { this.playOsc("sine", 800, 50, 2.0, 0.5, 0); }
     };
 
-    // --- 게임 기본 세팅 ---
+    // --- 게임 기본 변수 ---
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
@@ -245,7 +310,6 @@
     const COLS = 14; const ROWS = 17;
     const MAX_ENEMIES = 300;
 
-    // 게임 상태: 0=대기, 1=플레이, 2=종료
     let gameState = 0; 
     let budget = 150;
     let selectedTower = "SUM";
@@ -253,52 +317,69 @@
     let frame = 0;
     let screenShake = 0;
     let lastBossTier = 0;
+    let isMultiverse = false; // 차원 변환 플래그 (10티어)
 
+    // 트랙 설정
     const loopOuter = [ { c: 7, r: 1 }, { c: 13, r: 8 }, { c: 7, r: 15 }, { c: 1, r: 8 } ];
     const loopInner = [ { c: 4, r: 5 }, { c: 10, r: 5 }, { c: 10, r: 11 }, { c: 4, r: 11 } ];
     function gridToPixel(c, r) { return { x: HEADER_W + c * CELL_W + CELL_W / 2, y: HEADER_H + r * CELL_H + CELL_H / 2 }; }
     const pathOuterPx = loopOuter.map(p => gridToPixel(p.c, p.r));
     const pathInnerPx = loopInner.map(p => gridToPixel(p.c, p.r));
 
-    // 타워 스펙 (초기값)
     const TOWER_SPECS = {
       SUM: { cost: 40, range: 110, rate: 15, dmg: 15, color: "#107c41", name: "SUM" },
       IFERROR: { cost: 60, range: 100, rate: 3, dmg: 2, color: "#d83b01", name: "IFERR", isBeam: true },
       VLOOKUP: { cost: 90, range: 145, rate: 50, dmg: 45, color: "#0078d4", name: "VLOOK", splash: 75 },
-      MAX: { cost: 130, range: 400, rate: 75, dmg: 200, color: "#8e44ad", name: "MAX" } // 신규: 맵 전역 저격수
+      MAX: { cost: 130, range: 400, rate: 75, dmg: 200, color: "#8e44ad", name: "MAX" } 
     };
 
     let towers = []; let enemies = []; let projectiles = [];
     let particles = []; let floatingTexts = []; let shockwaves = [];
 
-    const ERROR_TAGS = ["#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#N/A", "#NUM!"];
+    // --- 적 이름(태그) 차원별 설정 ---
+    function getEnemyTag(tier, isBoss) {
+      if (tier >= 10) {
+        // HWP / Word 차원
+        if (isBoss) return "최종_진짜최종_제발.hwp";
+        const hwpTags = ["표_깨짐", "맑은고딕", "빨간줄", "응답없음", "배포용문서", "바탕체"];
+        return hwpTags[Math.floor(Math.random() * hwpTags.length)];
+      } else {
+        // 기존 엑셀 차원
+        if (isBoss) return "#FATAL_CRASH!";
+        const exTags = ["#NULL!", "#DIV/0!", "#VALUE!", "#REF!", "#N/A", "#NUM!"];
+        return exTags[Math.floor(Math.random() * exTags.length)];
+      }
+    }
 
-    // --- 적 & 보스 클래스 ---
+    // --- 적 클래스 ---
     class ErrorEnemy {
       constructor(tier, isBoss = false) {
         this.isBoss = isBoss;
-        this.tag = isBoss ? "#FATAL_CRASH!" : ERROR_TAGS[Math.floor(Math.random() * ERROR_TAGS.length)];
+        this.tier = tier;
+        this.isHwp = tier >= 10;
+        this.tag = getEnemyTag(tier, isBoss);
         
-        this.speed = isBoss ? 0.8 : 1.3 + Math.min(3.0, tier * 0.1);
+        this.speed = isBoss ? 0.7 : 1.3 + Math.min(2.5, tier * 0.1);
         this.currentSpeed = this.speed;
         
-        // 밸런스: 적 체력은 매 티어마다 1.3배씩 증가 (복리 스케일링)
         const baseHp = 35 * Math.pow(1.3, tier - 1);
-        this.maxHp = isBoss ? baseHp * 25 : baseHp; // 보스는 체력 25배
+        this.maxHp = isBoss ? baseHp * 20 : baseHp; 
         this.hp = this.maxHp;
         
-        this.reward = isBoss ? 300 + tier * 20 : 8 + Math.floor(tier / 2);
+        this.reward = isBoss ? 400 + tier * 30 : 10 + Math.floor(tier);
         this.track = Math.random() > 0.5 ? pathOuterPx : pathInnerPx;
         this.progress = 0;
         this.hitFlash = 0;
-        this.baseScale = isBoss ? 2.2 : 1;
+        this.baseScale = isBoss ? (this.isHwp ? 2.5 : 2.2) : 1;
         this.scale = this.baseScale;
         this.slowTimer = 0;
         
         if (isBoss) {
-          screenShake = 15; // 보스 등장 시 화면 크게 흔들림
-          Sound.bossSpawn();
-          floatingTexts.push(new FloatingText(canvas.width/2, canvas.height/2, "⚠️ BOSS DETECTED ⚠️", "#ff0000", true, 60));
+          // 화면 흔들림 최대 캡 적용 (10을 넘지 않음)
+          addShake(this.isHwp ? 15 : 12); 
+          Sound.dimensionShift();
+          const warningText = this.isHwp ? "⚠️ HWP OVERLORD ⚠️" : "⚠️ BOSS DETECTED ⚠️";
+          floatingTexts.push(new FloatingText(canvas.width/2, canvas.height/2, warningText, this.isHwp ? "#0078d4" : "#ff0000", true, 60));
         }
         this.updateCoords();
       }
@@ -308,8 +389,7 @@
         const nextSeg = (seg + 1) % 4;
         const t = this.progress - Math.floor(this.progress);
         const p1 = this.track[seg]; const p2 = this.track[nextSeg];
-        this.x = p1.x + (p2.x - p1.x) * t;
-        this.y = p1.y + (p2.y - p1.y) * t;
+        this.x = p1.x + (p2.x - p1.x) * t; this.y = p1.y + (p2.y - p1.y) * t;
       }
 
       update() {
@@ -327,37 +407,49 @@
 
       takeDamage(dmg, isCrit = false) {
         this.hp -= dmg;
-        this.hitFlash = 4;
-        this.scale = this.baseScale * 1.25;
-        floatingTexts.push(new FloatingText(this.x, this.y - 15, Math.round(dmg), isCrit ? "#ff3838" : "#333", isCrit));
+        this.hitFlash = 3;
+        this.scale = this.baseScale * 1.2;
+        // 데미지 폰트 너무 많이 뜨면 눈아프니 확률/크기 조정
+        if (Math.random() > (isCrit ? 0 : 0.4)) {
+          floatingTexts.push(new FloatingText(this.x, this.y - 15, Math.round(dmg), isCrit ? "#ff3838" : "#555", isCrit));
+        }
       }
 
       draw() {
         ctx.save(); ctx.translate(this.x, this.y); ctx.scale(this.scale, this.scale);
 
-        // 보스는 더 짙고 위협적인 색상
-        const bgColor = this.hitFlash > 0 ? "#ffffff" : (this.isBoss ? "#3e0000" : "#ffebee");
-        const borderColor = this.hitFlash > 0 ? "#ff0000" : (this.isBoss ? "#ff0000" : "#e53935");
-        const textColor = this.hitFlash > 0 ? (this.isBoss ? "#000" : "#d32f2f") : (this.isBoss ? "#ff6b81" : "#b71c1c");
+        // 차원에 따른 컬러 팔레트
+        const themeColor = this.isHwp ? "#0078d4" : "#e53935"; // 한글은 파란색, 엑셀은 빨간색
+        const bgColor = this.hitFlash > 0 ? "#fff" : (this.isBoss ? (this.isHwp ? "#002a4a" : "#3e0000") : (this.isHwp ? "#e3f2fd" : "#ffebee"));
+        const borderColor = this.hitFlash > 0 ? themeColor : themeColor;
+        const textColor = this.hitFlash > 0 ? (this.isBoss ? "#000" : themeColor) : (this.isBoss ? (this.isHwp ? "#64b5f6" : "#ff6b81") : (this.isHwp ? "#1565c0" : "#b71c1c"));
 
         ctx.fillStyle = bgColor; ctx.strokeStyle = borderColor;
         ctx.lineWidth = this.isBoss ? 2 : (this.hitFlash > 0 ? 2 : 1);
-        ctx.fillRect(-22, -9, 44, 18); ctx.strokeRect(-22, -9, 44, 18);
+        
+        // HWP 몹은 네모 모양 말고 모서리가 둥근 문서 모양
+        if (this.isHwp) {
+          ctx.beginPath();
+          ctx.roundRect(-24, -12, 48, 24, 4);
+          ctx.fill(); ctx.stroke();
+        } else {
+          ctx.fillRect(-22, -9, 44, 18); ctx.strokeRect(-22, -9, 44, 18);
+        }
 
         ctx.fillStyle = textColor;
-        ctx.font = this.isBoss ? "bold 8px monospace" : "bold 9px monospace";
+        ctx.font = this.isBoss ? (this.isHwp ? "bold 7px sans-serif" : "bold 8px monospace") : (this.isHwp ? "bold 9px sans-serif" : "bold 9px monospace");
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(this.tag, 0, 0);
 
         // 체력바
-        ctx.fillStyle = "#555"; ctx.fillRect(-18, -14, 36, 2.5);
-        ctx.fillStyle = this.isBoss ? "#ff3838" : "#e53935";
-        ctx.fillRect(-18, -14, Math.max(0, (this.hp / this.maxHp) * 36), 2.5);
+        ctx.fillStyle = "#555"; ctx.fillRect(-18, this.isHwp ? -18 : -14, 36, 2.5);
+        ctx.fillStyle = this.isBoss ? "#ff3838" : themeColor;
+        ctx.fillRect(-18, this.isHwp ? -18 : -14, Math.max(0, (this.hp / this.maxHp) * 36), 2.5);
         ctx.restore();
       }
     }
 
-    // --- 무한 업그레이드 타워 클래스 ---
+    // --- 타워 클래스 ---
     class Tower {
       constructor(col, row, type) {
         this.col = col; this.row = row;
@@ -371,18 +463,13 @@
       }
 
       updateStats() {
-        // 데미지는 레벨당 1.35배 복리 증가 (적 증가율 1.3과 엎치락뒤치락)
         this.dmg = this.baseSpec.dmg * Math.pow(1.35, this.level - 1);    
-        // 업그레이드 비용은 레벨당 1.4배 복리 증가 (점점 업그레이드가 버거워짐)
         this.upgradeCost = Math.floor(this.baseSpec.cost * Math.pow(1.4, this.level));
-        
         this.range = this.baseSpec.range * (1 + (this.level - 1) * 0.05); 
         this.rate = Math.max(2, this.baseSpec.rate - (this.level - 1) * 2);
-        
-        // 시각 효과 변화
-        const hue = this.level * 20; 
-        this.auraColor = `hsla(${hue}, 80%, 70%, 0.3)`;
-        this.displayName = `${this.baseSpec.name} Lv.${this.level}`;
+        const hue = this.level * 25; 
+        this.auraColor = `hsla(${hue}, 80%, 75%, 0.3)`;
+        this.displayName = `${this.baseSpec.name} L${this.level}`;
       }
 
       upgrade() {
@@ -391,8 +478,7 @@
           this.level++;
           this.updateStats();
           Sound.upgrade();
-          floatingTexts.push(new FloatingText(this.x, this.y - 20, "LV UP!", this.baseSpec.color, true));
-          for(let i=0; i<10; i++) particles.push(new Particle(this.x, this.y, this.baseSpec.color, 4));
+          floatingTexts.push(new FloatingText(this.x, this.y - 20, "UP!", this.baseSpec.color, true, 20));
           return true;
         }
         return false;
@@ -405,14 +491,11 @@
         let target = null;
         let minDist = this.range;
 
-        // 보스를 우선 타겟팅하는 로직 (MAX 저격수는 특히 보스 우선)
         for (let enemy of enemies) {
           const d = Math.hypot(enemy.x - this.x, enemy.y - this.y);
           if (d <= minDist) {
-            // 보스이거나 기존 타겟보다 가깝다면 변경
             if (!target || enemy.isBoss || (!target.isBoss && d < minDist)) {
-              minDist = d;
-              target = enemy;
+              minDist = d; target = enemy;
             }
           }
         }
@@ -421,12 +504,11 @@
           this.laserTarget = target;
           if (target && this.cooldown === 0) {
             target.takeDamage(this.dmg);
-            // 레벨 오를수록 슬로우 강화 (최대 80% 감속)
             const slowAmount = Math.max(0.2, 0.45 - (this.level * 0.02));
             target.currentSpeed = target.speed * slowAmount;
             target.slowTimer = 10;
             this.cooldown = this.rate;
-            if (Math.random() < 0.2) Sound.hit("SUM");
+            Sound.hit("SUM"); 
           }
         } else {
           if (target && this.cooldown === 0) {
@@ -442,8 +524,7 @@
         const cellLeft = HEADER_W + this.col * CELL_W;
         const cellTop = HEADER_H + this.row * CELL_H;
 
-        // 레벨이 오를수록 배경에 오라 이펙트
-        ctx.fillStyle = this.level > 1 ? this.auraColor : "#e8f5e9";
+        ctx.fillStyle = this.level > 1 ? this.auraColor : (isMultiverse ? "#e6f2ff" : "#e8f5e9");
         ctx.fillRect(cellLeft + 1, cellTop + 1, CELL_W - 2, CELL_H - 2);
 
         ctx.strokeStyle = this.baseSpec.color;
@@ -451,13 +532,13 @@
         ctx.strokeRect(cellLeft + 1, cellTop + 1, CELL_W - 2, CELL_H - 2);
 
         ctx.fillStyle = this.baseSpec.color;
-        ctx.font = "bold 10px sans-serif";
+        ctx.font = "bold 9px sans-serif";
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(this.displayName, this.x, this.y);
 
         if (this.baseSpec.isBeam && this.laserTarget && enemies.includes(this.laserTarget)) {
           ctx.strokeStyle = this.baseSpec.color;
-          ctx.lineWidth = 2 + Math.min(5, this.level * 0.5) + Math.random() * 2;
+          ctx.lineWidth = 2 + Math.min(3, this.level * 0.3) + Math.random();
           ctx.beginPath(); ctx.moveTo(this.x, this.y); ctx.lineTo(this.laserTarget.x, this.laserTarget.y); ctx.stroke();
         }
       }
@@ -467,7 +548,7 @@
     class Projectile {
       constructor(x, y, target, tower) {
         this.x = x; this.y = y; this.target = target; this.tower = tower;
-        this.speed = tower.type === "MAX" ? 18 : (tower.baseSpec.splash ? 8 : 12); // MAX는 총알이 매우 빠름
+        this.speed = tower.type === "MAX" ? 18 : (tower.baseSpec.splash ? 8 : 12);
       }
       update() {
         if (!enemies.includes(this.target)) return true;
@@ -480,7 +561,7 @@
       }
       hit() {
         if (this.tower.baseSpec.splash) {
-          screenShake = 3 + Math.min(10, this.tower.level);
+          addShake(2 + Math.min(4, this.tower.level * 0.5)); // 최대 흔들림 제한
           Sound.hit("VLOOKUP");
           const splashRange = this.tower.baseSpec.splash * (1 + (this.tower.level - 1) * 0.1);
           shockwaves.push(new Shockwave(this.x, this.y, splashRange, this.tower.baseSpec.color));
@@ -491,19 +572,19 @@
               e.takeDamage(this.tower.dmg * falloff, true);
             }
           });
-          for (let i = 0; i < 12; i++) particles.push(new Particle(this.x, this.y, this.tower.baseSpec.color, 4));
+          // 파티클 갯수 너프 (렉 방지)
+          for (let i = 0; i < 6; i++) particles.push(new Particle(this.x, this.y, this.tower.baseSpec.color, 4));
         } else {
           Sound.hit(this.tower.type, this.target.isBoss);
           this.target.takeDamage(this.tower.dmg, this.tower.type === "MAX");
-          for (let i = 0; i < 6; i++) particles.push(new Particle(this.x, this.y, this.tower.baseSpec.color, 3));
+          for (let i = 0; i < 3; i++) particles.push(new Particle(this.x, this.y, this.tower.baseSpec.color, 3));
         }
       }
       draw() {
         ctx.fillStyle = this.tower.baseSpec.color;
         if (this.tower.baseSpec.splash) {
-          ctx.beginPath(); ctx.arc(this.x, this.y, 4 + Math.min(3, this.tower.level*0.2), 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(this.x, this.y, 4, 0, Math.PI * 2); ctx.fill();
         } else if (this.tower.type === "MAX") {
-          // 저격수 총알 (긴 선형태)
           ctx.beginPath(); ctx.arc(this.x, this.y, 5, 0, Math.PI * 2); ctx.fill();
         } else {
           ctx.font = "bold 14px monospace"; ctx.fillText(";", this.x, this.y);
@@ -517,96 +598,112 @@
         this.x = x; this.y = y; this.color = color;
         const angle = Math.random() * Math.PI * 2; const v = Math.random() * speed + 1;
         this.vx = Math.cos(angle) * v; this.vy = Math.sin(angle) * v;
-        this.life = 15 + Math.random() * 10; this.maxLife = this.life;
+        this.life = 10 + Math.random() * 10; this.maxLife = this.life;
       }
       update() { this.x += this.vx; this.y += this.vy; this.life--; return this.life <= 0; }
       draw() { ctx.fillStyle = this.color; ctx.globalAlpha = this.life / this.maxLife; ctx.fillRect(this.x, this.y, 3, 3); ctx.globalAlpha = 1; }
     }
     class Shockwave {
       constructor(x, y, maxR, color) { this.x = x; this.y = y; this.r = 5; this.maxR = maxR; this.color = color; }
-      update() { this.r += 8; return this.r >= this.maxR; }
+      update() { this.r += 10; return this.r >= this.maxR; }
       draw() {
         ctx.strokeStyle = this.color; ctx.globalAlpha = 1 - (this.r / this.maxR);
-        ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
+        ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2); ctx.stroke(); ctx.globalAlpha = 1;
       }
     }
     class FloatingText {
-      constructor(x, y, text, color, isCrit, life=30) {
+      constructor(x, y, text, color, isCrit, life=25) {
         this.x = x; this.y = y; this.text = text; this.color = color; this.isCrit = isCrit; this.life = life; this.maxLife = life;
       }
       update() { this.y -= 0.6; this.life--; return this.life <= 0; }
       draw() {
-        ctx.fillStyle = this.color; ctx.font = this.isCrit ? "bold 15px sans-serif" : "bold 11px sans-serif";
+        ctx.fillStyle = this.color; ctx.font = this.isCrit ? "bold 13px sans-serif" : "bold 9px sans-serif";
         ctx.textAlign = "center"; ctx.globalAlpha = this.life / this.maxLife; ctx.fillText(this.text, this.x, this.y); ctx.globalAlpha = 1;
       }
     }
 
-    // --- 렌더링 및 UI ---
+    // --- 렌더링 & 유틸 ---
+    function addShake(amt) {
+      // 화면 흔들림 최대 10으로 캡 적용 (눈 아픔 방지)
+      screenShake = Math.min(screenShake + amt, 10);
+    }
+
     function drawExcelGrid() {
-      ctx.strokeStyle = "#e0e0e0"; ctx.lineWidth = 1;
-      ctx.fillStyle = "#f3f2f1"; ctx.fillRect(0, 0, canvas.width, HEADER_H); ctx.fillRect(0, 0, HEADER_W, canvas.height);
+      ctx.strokeStyle = isMultiverse ? "#cce0ff" : "#e0e0e0"; 
+      ctx.lineWidth = 1;
+      
+      // 헤더 바탕
+      ctx.fillStyle = isMultiverse ? "#e6f2ff" : "#f3f2f1"; 
+      ctx.fillRect(0, 0, canvas.width, HEADER_H); ctx.fillRect(0, 0, HEADER_W, canvas.height);
 
       for (let c = 0; c <= COLS; c++) {
         const x = HEADER_W + c * CELL_W; ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-        if (c < COLS) { ctx.fillStyle = "#555"; ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center"; ctx.fillText(String.fromCharCode(65 + c), x + CELL_W / 2, 16); }
+        if (c < COLS) { 
+          ctx.fillStyle = isMultiverse ? "#0078d4" : "#555"; 
+          ctx.font = "bold 11px sans-serif"; ctx.textAlign = "center"; 
+          ctx.fillText(String.fromCharCode(65 + c), x + CELL_W / 2, 16); 
+        }
       }
       for (let r = 0; r <= ROWS; r++) {
         const y = HEADER_H + r * CELL_H; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-        if (r < ROWS) { ctx.fillStyle = "#555"; ctx.font = "11px sans-serif"; ctx.textAlign = "center"; ctx.fillText(r + 1, HEADER_W / 2, y + CELL_H / 2 + 4); }
+        if (r < ROWS) { 
+          ctx.fillStyle = isMultiverse ? "#0078d4" : "#555"; 
+          ctx.font = "11px sans-serif"; ctx.textAlign = "center"; 
+          ctx.fillText(r + 1, HEADER_W / 2, y + CELL_H / 2 + 4); 
+        }
       }
-      ctx.strokeStyle = "rgba(16, 124, 65, 0.4)"; ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
+
+      // 멀티버스 진입 시 트랙 색상도 변함
+      ctx.strokeStyle = isMultiverse ? "rgba(216, 59, 1, 0.4)" : "rgba(16, 124, 65, 0.4)"; 
+      ctx.lineWidth = 2; ctx.setLineDash([4, 4]);
       ctx.beginPath(); ctx.moveTo(pathOuterPx[0].x, pathOuterPx[0].y); for (let i = 1; i < pathOuterPx.length; i++) ctx.lineTo(pathOuterPx[i].x, pathOuterPx[i].y); ctx.closePath(); ctx.stroke();
-      ctx.strokeStyle = "rgba(0, 120, 212, 0.4)";
+      
+      ctx.strokeStyle = isMultiverse ? "rgba(128, 0, 128, 0.4)" : "rgba(0, 120, 212, 0.4)";
       ctx.beginPath(); ctx.moveTo(pathInnerPx[0].x, pathInnerPx[0].y); for (let i = 1; i < pathInnerPx.length; i++) ctx.lineTo(pathInnerPx[i].x, pathInnerPx[i].y); ctx.closePath(); ctx.stroke();
       ctx.setLineDash([]);
     }
 
+    // --- 입력 처리 (모바일 터치 호환) ---
     document.querySelectorAll(".tower-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        initAudio(); document.querySelectorAll(".tower-btn").forEach(b => b.classList.remove("active"));
+      // touchstart 추가로 모바일 반응성 향상
+      btn.addEventListener("pointerdown", (e) => {
+        Sound.init(); 
+        document.querySelectorAll(".tower-btn").forEach(b => b.classList.remove("active"));
         btn.classList.add("active"); selectedTower = btn.dataset.type;
       });
     });
 
-    canvas.addEventListener("click", (e) => {
+    canvas.addEventListener("pointerdown", (e) => {
       if (gameState !== 1) return;
-      initAudio();
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left - HEADER_W; const y = e.clientY - rect.top - HEADER_H;
-      if (x < 0 || y < 0) return;
-      const col = Math.floor(x / CELL_W); const row = Math.floor(y / CELL_H);
-      if (col >= COLS || row >= ROWS) return;
+      Sound.init();
+      
+      const pos = getGridPos(e);
+      if (!pos.isValid || pos.col >= COLS || pos.row >= ROWS) return;
 
-      const existing = towers.find(t => t.col === col && t.row === row);
+      const existing = towers.find(t => t.col === pos.col && t.row === pos.row);
       if (existing) {
         existing.upgrade(); updateUI(); return;
       }
       const spec = TOWER_SPECS[selectedTower];
       if (budget >= spec.cost) {
-        budget -= spec.cost; towers.push(new Tower(col, row, selectedTower)); updateUI();
+        budget -= spec.cost; towers.push(new Tower(pos.col, pos.row, selectedTower)); updateUI();
       }
     });
 
-    canvas.addEventListener("mousemove", (e) => {
+    canvas.addEventListener("pointermove", (e) => {
       if (gameState !== 1) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left - HEADER_W; const y = e.clientY - rect.top - HEADER_H;
+      const pos = getGridPos(e);
       const nameBox = document.getElementById("name-box");
-      if (x >= 0 && y >= 0) {
-        const col = Math.floor(x / CELL_W); const row = Math.floor(y / CELL_H);
-        if (col < COLS && row < ROWS) {
-          let text = `${String.fromCharCode(65 + col)}${row + 1}`;
-          const existing = towers.find(t => t.col === col && t.row === row);
-          if (existing) {
-            text += ` (Lv${existing.level+1} 강화: $${existing.upgradeCost})`;
-            nameBox.style.width = "220px";
-            nameBox.style.color = "#8e44ad";
-          } else {
-            nameBox.style.width = "50px";
-            nameBox.style.color = "#333";
-          }
-          nameBox.innerText = text;
+      if (pos.isValid && pos.col < COLS && pos.row < ROWS) {
+        let text = `${String.fromCharCode(65 + pos.col)}${pos.row + 1}`;
+        const existing = towers.find(t => t.col === pos.col && t.row === pos.row);
+        if (existing) {
+          text += ` (+$${existing.upgradeCost})`;
+          nameBox.style.width = "120px"; nameBox.style.color = "#8e44ad";
+        } else {
+          nameBox.style.width = "50px"; nameBox.style.color = "#333";
         }
+        nameBox.innerText = text;
       }
     });
 
@@ -615,22 +712,36 @@
       el.innerText = enemies.length;
       if (enemies.length >= 250) el.classList.add("danger"); else el.classList.remove("danger");
       document.getElementById("budget").innerText = budget;
-      document.getElementById("tier-level").innerText = Math.floor(gameTime / 600) + 1;
+      
+      const tier = Math.floor(gameTime / 600) + 1;
+      const tierBadge = document.getElementById("tier-badge");
+      tierBadge.innerText = `📈 티어: ${tier}`;
+      
+      // 10티어 달성 시 UI 변화
+      if (tier >= 10 && !isMultiverse) {
+        isMultiverse = true;
+        document.getElementById("title-bar").style.background = "var(--hwp-blue)";
+        document.getElementById("title-bar").children[0].innerText = "📘 HWP_Invasion.hwp - 한글의 역습";
+        Sound.dimensionShift();
+      }
     }
 
     // --- 게임 제어 흐름 ---
     function startGame() {
-      initAudio();
+      Sound.init();
       document.getElementById("start-overlay").style.display = "none";
-      gameState = 1; // Play
+      gameState = 1; 
       requestAnimationFrame(gameLoop);
     }
 
     function restartGame() {
-      initAudio();
+      Sound.init();
       document.getElementById("game-over-overlay").style.display = "none";
+      document.getElementById("title-bar").style.background = "var(--excel-green)";
+      document.getElementById("title-bar").children[0].innerText = "📊 Multiverse_Defense.xlsx - 한글문서의 침공";
       towers = []; enemies = []; projectiles = []; particles = []; floatingTexts = []; shockwaves = [];
       budget = 150; gameTime = 0; frame = 0; lastBossTier = 0; screenShake = 0;
+      isMultiverse = false;
       updateUI();
       gameState = 1;
     }
@@ -638,12 +749,12 @@
     function setGameOver() {
       gameState = 2;
       const finalTier = Math.floor(gameTime / 600) + 1;
-      document.getElementById("final-score").innerText = `달성 티어: ${finalTier} | 생존 시간: ${Math.floor(gameTime/60)}초`;
+      document.getElementById("final-score").innerText = `최종 티어: ${finalTier} | 버틴 시간: ${Math.floor(gameTime/60)}초`;
       document.getElementById("game-over-overlay").style.display = "flex";
-      Sound.hit("VLOOKUP", true); // 폭발음
+      Sound.hit("VLOOKUP", true); 
     }
 
-    // --- 메인 게임 루프 ---
+    // --- 메인 루프 ---
     function gameLoop() {
       if (gameState !== 1) return;
       frame++; gameTime++;
@@ -653,20 +764,22 @@
         ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
         screenShake *= 0.85; if (screenShake < 0.5) screenShake = 0;
       }
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // 멀티버스 배경색 적용
+      ctx.fillStyle = isMultiverse ? "#f0f8ff" : "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
       drawExcelGrid();
 
-      // 시간당 1티어 상승 (약 10초 = 600프레임)
       const currentTier = Math.floor(gameTime / 600) + 1;
       
-      // 보스 스폰 로직 (5티어 마다)
       if (currentTier > 1 && currentTier % 5 === 0 && currentTier > lastBossTier) {
         enemies.push(new ErrorEnemy(currentTier, true));
         lastBossTier = currentTier;
       }
 
-      // 일반 몹 스폰 (티어가 높을수록 빨리, 최대치 제한 있음)
-      const spawnInterval = Math.max(12, 60 - currentTier * 3);
+      // 너무 무한대로 빨리 나오지 않도록 최소 스폰 간격 15 캡 적용
+      const spawnInterval = Math.max(15, 60 - currentTier * 3);
       if (frame % spawnInterval === 0) {
         enemies.push(new ErrorEnemy(currentTier, false));
         if (enemies.length >= MAX_ENEMIES) {
@@ -681,10 +794,9 @@
         enemies[i].update();
         if (enemies[i].hp <= 0) {
           budget += enemies[i].reward;
-          // 보스 처치 시 파티클 축제
           if (enemies[i].isBoss) {
-            screenShake = 10; Sound.hit("VLOOKUP");
-            for(let p=0; p<40; p++) particles.push(new Particle(enemies[i].x, enemies[i].y, "#ffeb3b", 6));
+            addShake(10); Sound.hit("VLOOKUP");
+            for(let p=0; p<30; p++) particles.push(new Particle(enemies[i].x, enemies[i].y, "#ffeb3b", 6));
             floatingTexts.push(new FloatingText(enemies[i].x, enemies[i].y - 30, "+BOSS REWARD!", "#ffeb3b", true, 50));
           }
           enemies.splice(i, 1); continue;
@@ -704,7 +816,6 @@
       if (gameState === 1) requestAnimationFrame(gameLoop);
     }
     
-    // 초기에는 렌더링만 해두고 대기
     drawExcelGrid();
   </script>
 </body>
