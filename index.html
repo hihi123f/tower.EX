@@ -26,12 +26,13 @@
     }
     @media screen and (orientation: portrait) { #portrait-warning { display: flex; } #excel-window { display: none !important; } }
 
-    /* 유동적 레이아웃을 위한 기본 스타일 */
     #excel-window {
       background: #fff; border: 2px solid #444; box-shadow: 0 10px 40px rgba(0,0,0,0.9);
       border-radius: 6px; overflow: hidden; height: 590px;
       display: flex; flex-direction: column;
-      position: relative; transform-origin: center center;
+      /* ▼ 브라우저 강제 축소 방지를 위한 절대 중앙 정렬 추가 ▼ */
+      position: absolute; left: 50%; top: 50%; 
+      transform-origin: center center;
     }
 
     #title-bar { background: var(--bar-color); color: #fff; padding: 6px 12px; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; transition: background 1s; }
@@ -166,9 +167,11 @@
 
     function resizeWindow() {
       const win = document.getElementById('excel-window');
-      const scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / 590, 1);
+      // ▼ 남는 공간 없이 꽉 차도록 최대치(1) 제한 해제 ▼
+      const scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / 590);
       win.style.width = baseWidth + "px";
-      win.style.transform = `scale(${scale})`;
+      // ▼ absolute 중앙 정렬과 scale 동시 적용 ▼
+      win.style.transform = `translate(-50%, -50%) scale(${scale})`;
     }
     window.addEventListener('resize', resizeWindow); 
 
