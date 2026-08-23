@@ -80,6 +80,24 @@
     .modal::-webkit-scrollbar { width: 6px; } .modal::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
     .modal-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #ccc; } .modal-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     .m-title { font-weight: bold; font-size: 13px; } .m-sub { font-size: 10px; color: #555; margin: 2px 0; font-family: monospace; font-weight:bold; } .m-desc { font-size: 11px; color: #333; }
+    /* 증강(Augment) UI 스타일 */
+    #augment-overlay { display: none; position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.85); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
+    .aug-title-text { color: #fff; font-size: 32px; font-weight: bold; margin-bottom: 40px; text-shadow: 0 0 15px rgba(255,255,255,0.5); }
+    #augment-cards-container { display: flex; gap: 25px; }
+    .augment-card { width: 220px; height: 320px; border-radius: 12px; background: #222; display:flex; flex-direction:column; align-items:center; justify-content:center; padding: 20px; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; text-align:center; }
+    .augment-card:hover { transform: translateY(-15px); }
+    .aug-tier { font-size: 15px; font-weight: bold; margin-bottom: 15px; letter-spacing: 2px; }
+    .aug-name { font-size: 24px; font-weight: bold; color: #fff; margin-bottom: 20px; }
+    .aug-desc { font-size: 14px; color: #ccc; line-height: 1.5; word-break: keep-all; }
+    
+    /* 티어별 색상 및 애니메이션 */
+    .tier-Silver { border: 3px solid #bdc3c7; box-shadow: 0 0 15px rgba(189,195,199,0.5); }
+    .tier-Silver .aug-tier { color: #bdc3c7; }
+    .tier-Gold { border: 3px solid #f1c40f; box-shadow: 0 0 25px rgba(241,196,15,0.6); }
+    .tier-Gold .aug-tier { color: #f1c40f; }
+    .tier-Prismatic { border: 4px solid transparent; background-image: linear-gradient(#222, #222), linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff); background-origin: border-box; background-clip: padding-box, border-box; box-shadow: 0 0 35px rgba(255, 255, 255, 0.4); animation: holo 3s linear infinite; }
+    .tier-Prismatic .aug-tier { background: linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff); -webkit-background-clip: text; color: transparent; }
+    @keyframes holo { 100% { filter: hue-rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -134,6 +152,24 @@
           </div>
           <button class="btn-action" onclick="startGame()">▶ 게임 시작</button>
         </div>
+
+        <div id="start-overlay" class="overlay">
+          <h1 style="color: #4cd137;">Multiverse Defense</h1>
+          <div style="color:#ddd; margin-bottom: 25px; text-align:center; line-height: 1.6;">
+            <b>🛠️ 최종 완성본 적용 완료</b><br/><br/>
+            - 타워를 <b>길게 터치(우클릭)</b>하면 70% 환불 후 철거됩니다.<br/>
+            - 렉 방지를 원하면 <b>[⚙️ 품질: 낮음]</b>으로 설정하세요.<br/>
+            - 전체 화면을 원하면 <b>[📱 앱모드]</b>를 누르세요.
+          </div>
+          <button class="btn-action" onclick="startGame()">▶ 게임 시작</button>
+        </div>
+
+        <!-- ▼ 새롭게 추가되는 증강 선택 화면! (여기서부터) ▼ -->
+        <div id="augment-overlay">
+          <div class="aug-title-text">✨ 아수라장 증강 선택 ✨</div>
+          <div id="augment-cards-container"></div>
+        </div>
+        <!-- ▲ (여기까지) ▲ -->
 
         <div id="game-over-overlay" class="overlay" style="display: none;">
           <h1 id="go-title">#STACK_OVERFLOW!</h1>
@@ -333,6 +369,51 @@
     let gameState = 0; let budget = 300; let selectedTower = "SUM";
     let gameTime = 0; let frame = 0; let screenShake = 0; let currentTier = 1; let currentDimName = "EXCEL"; let bsodFlash = 0;
 
+    // --- 증강(Augment) 전역 변수 및 데이터 ---
+    let globalDmgMult = 1.0; let globalCostMult = 1.0; let globalRateMult = 1.0; let globalRangeMult = 1.0; let refundRate = 0.7;
+
+    const AUGMENTS = [
+      { tier: "Silver", name: "예산 절감", desc: "모든 타워의 업그레이드 비용 15% 감소", effect: () => { globalCostMult *= 0.85; } },
+      { tier: "Silver", name: "단기 집중", desc: "모든 타워의 공격력 20% 증가", effect: () => { globalDmgMult *= 1.20; } },
+      { tier: "Silver", name: "렌즈 확장", desc: "모든 타워의 사거리 20% 증가", effect: () => { globalRangeMult *= 1.20; } },
+      { tier: "Gold", name: "철거반", desc: "타워 철거(판매) 시 환불률 95%로 증가", effect: () => { refundRate = 0.95; } },
+      { tier: "Gold", name: "초정밀 윤활유", desc: "모든 타워의 공격 속도 25% 증가", effect: () => { globalRateMult *= 0.75; } },
+      { tier: "Gold", name: "시드 머니", desc: "즉시 예산 +$1500 획득", effect: () => { budget += 1500; } },
+      { tier: "Prismatic", name: "무한의 대검", desc: "모든 타워의 공격력 60% 증가", effect: () => { globalDmgMult *= 1.6; } },
+      { tier: "Prismatic", name: "초전도체", desc: "공격 속도 40% 증가 & 사거리 40% 증가", effect: () => { globalRateMult *= 0.6; globalRangeMult *= 1.4; } },
+      { tier: "Prismatic", name: "만수르", desc: "즉시 예산 +$5000 획득", effect: () => { budget += 5000; } }
+    ];
+
+    function showAugments() {
+      gameState = 3; // 게임 일시정지!
+      const choices = [];
+      while(choices.length < 3) {
+         const r = Math.random();
+         const targetTier = r < 0.15 ? "Prismatic" : (r < 0.5 ? "Gold" : "Silver");
+         const pool = AUGMENTS.filter(a => a.tier === targetTier);
+         const aug = pool[Math.floor(Math.random() * pool.length)];
+         if(!choices.includes(aug)) choices.push(aug);
+      }
+      const container = document.getElementById("augment-cards-container");
+      container.innerHTML = "";
+      choices.forEach(aug => {
+         const card = document.createElement("div");
+         card.className = `augment-card tier-${aug.tier}`;
+         card.innerHTML = `<div class="aug-tier">${aug.tier.toUpperCase()} 증강</div><div class="aug-name">${aug.name}</div><div class="aug-desc">${aug.desc}</div>`;
+         card.onclick = () => {
+             aug.effect();
+             towers.forEach(t => t.updateStats()); // 효과 즉시 적용
+             document.getElementById("augment-overlay").style.display = "none";
+             floatingTexts.push(new FloatingText(880/2, 490/2, `[${aug.name}] 적용 완료!`, "#00ff00", true, 80));
+             Sound.synergy(); updateUI();
+             gameState = 1; // 게임 재개!
+             requestAnimationFrame(gameLoop);
+         };
+         container.appendChild(card);
+      });
+      document.getElementById("augment-overlay").style.display = "flex";
+    }
+
     let towers = []; let enemies = []; let projectiles = []; let particles = []; let floatingTexts = []; let shockwaves = [];
 
     class ErrorEnemy {
@@ -425,11 +506,12 @@
         this.updateStats(); this.cooldown = 0; this.recoil = 0; this.laserTargets = [];
       }
       updateStats() {
-        this.dmg = this.baseSpec.dmg * Math.pow(1.35, this.level - 1);    
+        // 증강(글로벌 변수) 배수들을 곱해줍니다!
+        this.dmg = (this.baseSpec.dmg * Math.pow(1.35, this.level - 1)) * globalDmgMult;    
         const baseCost = this.isSynergy ? (this.baseSpec.req.length > 2 ? 300 : 150) : this.baseSpec.cost;
-        this.upgradeCost = Math.floor(baseCost * Math.pow(1.2, this.level));
-        this.range = this.baseSpec.range * (1 + (this.level - 1) * 0.05); 
-        this.rate = Math.max(2, Math.round(this.baseSpec.rate - (this.level - 1) * 1.5));
+        this.upgradeCost = Math.floor((baseCost * Math.pow(1.2, this.level)) * globalCostMult);
+        this.range = (this.baseSpec.range * (1 + (this.level - 1) * 0.05)) * globalRangeMult; 
+        this.rate = Math.max(2, Math.round((this.baseSpec.rate - (this.level - 1) * 1.5) * globalRateMult));
         this.displayName = `${this.baseSpec.name} L${this.level}`;
       }
       upgrade() {
@@ -559,9 +641,11 @@
       const idx = towers.findIndex(t => t.col === pos.col && t.row === pos.row);
       if (idx > -1) {
         const t = towers[idx]; 
-        const refund = Math.floor(t.totalSpent * 0.7); // 70% 환불
+        // 🚨 고정 0.7이 아니라 증강이 반영된 refundRate 변수 사용!
+        const refund = Math.floor(t.totalSpent * refundRate); 
         budget += refund; 
         towers.splice(idx, 1);
+        // ... (아래는 기존 코드와 동일)
         
         if(highQuality) { for(let i=0; i<10; i++) particles.push(new Particle(t.x, t.y, "#e74c3c", 4)); }
         floatingTexts.push(new FloatingText(t.x, t.y - 15, `판매 (+$${refund})`, "#e74c3c", true, 40));
@@ -704,7 +788,14 @@
         enemies[i].update();
         if (enemies[i].hp <= 0) {
           budget += enemies[i].reward;
-          if (enemies[i].isBoss) { addShake(15); Sound.hit("MAX"); if(highQuality) for(let p=0; p<40; p++) particles.push(new Particle(enemies[i].x, enemies[i].y, "#ffeb3b", 6)); floatingTexts.push(new FloatingText(enemies[i].x, enemies[i].y - 30, "+BOSS REWARD", "#ffeb3b", true, 50)); }
+          if (enemies[i].isBoss) { 
+            addShake(15); Sound.hit("MAX"); 
+            if(highQuality) for(let p=0; p<40; p++) particles.push(new Particle(enemies[i].x, enemies[i].y, "#ffeb3b", 6)); 
+            floatingTexts.push(new FloatingText(enemies[i].x, enemies[i].y - 30, "+BOSS REWARD", "#ffeb3b", true, 50)); 
+            
+            // 🚨 보스가 죽으면 증강 선택 화면 호출!
+            showAugments();
+          }
           enemies.splice(i, 1); continue;
         }
         enemies[i].draw();
