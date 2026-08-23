@@ -112,6 +112,8 @@
       <div class="stat-badge">💰 예산: $<span id="budget">300</span></div>
       <div class="stat-badge" id="tier-badge">📈 티어: 1 (EXCEL)</div>
       <div style="margin-left: auto; display:flex;">
+        <!-- ▼ 여기에 품질 조절 버튼이 추가되었습니다 ▼ -->
+        <button class="btn-toolbar btn-quality" id="quality-btn" onclick="toggleQuality()" style="background:#16a085;">⚙️ 품질: 높음</button>
         <button class="btn-toolbar" onclick="toggleModal('info-modal')">❓ 타워 설명</button>
         <button class="btn-toolbar" onclick="toggleModal('recipe-modal')">📖 조합표</button>
         <button class="btn-toolbar btn-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()">▶ 패널 닫기</button>
@@ -161,6 +163,28 @@
   </div>
 
   <script>
+    // --- 설정 변수 ---
+    let highQuality = true;
+    function toggleQuality() {
+      highQuality = !highQuality;
+      const btn = document.getElementById("quality-btn");
+      btn.innerText = highQuality ? "⚙️ 품질: 높음" : "⚙️ 품질: 낮음";
+      btn.style.background = highQuality ? "#16a085" : "#7f8c8d";
+    }
+
+    // --- 캔버스 셋업 & 고해상도(DPR) 패치 ---
+    const canvas = document.getElementById("gameCanvas"); 
+    const ctx = canvas.getContext("2d");
+    const CELL_W = 55; const CELL_H = 30; const HEADER_W = 40; const HEADER_H = 25;
+    const COLS = 15; const ROWS = 15; const MAX_ENEMIES = 300;
+
+    // 기기 해상도 비율 가져오기
+    const dpr = window.devicePixelRatio || 1;
+    canvas.style.width = "880px"; 
+    canvas.style.height = "490px";
+    canvas.width = 880 * dpr; 
+    canvas.height = 490 * dpr;
+    ctx.scale(dpr, dpr);
     // ★ 동적 화면 스케일링 로직
     let sidebarOpen = true;
     let baseWidth = 1160; // 사이드바 열려있을 때 전체 폭
@@ -562,7 +586,9 @@
       draw() { ctx.fillStyle = this.color; ctx.font = this.isCrit ? "bold 13px sans-serif" : "bold 9px sans-serif"; ctx.textAlign = "center"; ctx.globalAlpha = this.life / this.maxLife; ctx.fillText(this.text, this.x, this.y); ctx.globalAlpha = 1; }
     }
 
-    function addShake(amt) { screenShake = Math.min(screenShake + amt, 10); }
+    function addShake(amt) { 
+      if(highQuality) screenShake = Math.min(screenShake + amt, 10); 
+    }
 
     function drawExcelGrid(dim) {
       ctx.strokeStyle = dim.grid; ctx.lineWidth = 1; ctx.fillStyle = (dim.bg==="#0d0d0d" ? "#1a1a1a" : "#f3f2f1"); 
@@ -585,8 +611,66 @@
       ctx.setLineDash([]);
     }
 
+    // --- 타워 철거 및 70% 환불 로직 ---
+    // --- 타워 철거 및 70% 환불 로직 ---
+    function handleSell(e) {
+      const pos = getGridPos(e); 
+      if (!pos.isValid || pos.col >= COLS || pos.row >= ROWS) return;
+      
+      const idx = towers.findIndex(t => t.col === pos.col && t.row === pos.row);
+      if (idx > -1) {
+        const t = towers[idx]; 
+        const refund = Math.floor(t.totalSpent * 0.7); // 70% 환불
+        budget += refund; 
+        towers.splice(idx, 1);
+        
+        if(highQuality) { for(let i=0; i<10; i++) particles.push(new Particle(t.x, t.y, "#e74c3c", 4)); }
+        floatingTexts.push(new FloatingText(t.x, t.y - 15, `판매 (+$${refund})`, "#e74c3c", true, 40));
+        Sound.error(); 
+        updateUI();
+      }
+    }
+
+    // 1. PC 우클릭 판매 이벤트
+    canvas.addEventListener("contextmenu", (e) => { 
+      e.preventDefault(); 
+      if (gameState === 1) handleSell(e); 
+    });
+
+    // 2. 모바일 터치 이벤트 (길게 누르기 vs 짧게 터치 완벽 분리)
+    let pressTimer = null; 
+    let isLongPressed = false; 
+    let startX, startY;
+    
+    // 손을 대는 순간 (판매 타이머 시작)
     canvas.addEventListener("pointerdown", (e) => {
-      if (gameState !== 1) return; Sound.init();
+      if (gameState !== 1 || e.button === 2) return; 
+      isLongPressed = false; startX = e.clientX; startY = e.clientY;
+      pressTimer = setTimeout(() => {
+        isLongPressed = true; handleSell(e);
+      }, 400); // 0.4초 길게 누르면 판매
+    });
+
+    // 손을 움직일 때 (화면 드래그 시 판매 취소 & 마우스 오버 UI 갱신)
+    canvas.addEventListener("pointermove", (e) => {
+      if (pressTimer && Math.hypot(e.clientX - startX, e.clientY - startY) > 10) { clearTimeout(pressTimer); pressTimer = null; }
+      if (gameState !== 1) return; 
+      const pos = getGridPos(e); const nameBox = document.getElementById("name-box");
+      if (pos.isValid && pos.col < COLS && pos.row < ROWS) {
+        let text = `${String.fromCharCode(65 + pos.col)}${pos.row + 1}`;
+        const existing = towers.find(t => t.col === pos.col && t.row === pos.row);
+        if (existing) { text += ` (+$${existing.upgradeCost})`; nameBox.style.width = "120px"; nameBox.style.color = "#8e44ad"; } 
+        else { nameBox.style.width = "50px"; nameBox.style.color = "#333"; }
+        nameBox.innerText = text;
+      }
+    });
+
+    // 손을 뗄 때 (타워 설치 및 업그레이드)
+    canvas.addEventListener("pointerup", (e) => {
+      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+      if (gameState !== 1 || e.button === 2 || isLongPressed) return; // 길게 눌러서 팔렸다면 설치 취소!
+      Sound.init();
+
       const pos = getGridPos(e); if (!pos.isValid || pos.col >= COLS || pos.row >= ROWS) return;
       const existing = towers.find(t => t.col === pos.col && t.row === pos.row);
       const spec = TOWER_SPECS[selectedTower];
@@ -604,7 +688,7 @@
         towersToRemove.forEach(t => {
           refundGold += t.totalSpent * 0.8; 
           const idx = towers.indexOf(t); if(idx > -1) towers.splice(idx, 1);
-          for(let i=0; i<8; i++) particles.push(new Particle(t.x, t.y, "#888", 3));
+          if(highQuality) for(let i=0; i<8; i++) particles.push(new Particle(t.x, t.y, "#888", 3));
         });
         
         refundGold = Math.floor(refundGold); budget += refundGold;
@@ -615,17 +699,6 @@
       }
       if (existing) { existing.upgrade(); updateUI(); return; }
       if (budget >= spec.cost) { budget -= spec.cost; towers.push(new Tower(pos.col, pos.row, selectedTower)); updateUI(); }
-    });
-
-    canvas.addEventListener("pointermove", (e) => {
-      if (gameState !== 1) return; const pos = getGridPos(e); const nameBox = document.getElementById("name-box");
-      if (pos.isValid && pos.col < COLS && pos.row < ROWS) {
-        let text = `${String.fromCharCode(65 + pos.col)}${pos.row + 1}`;
-        const existing = towers.find(t => t.col === pos.col && t.row === pos.row);
-        if (existing) { text += ` (+$${existing.upgradeCost})`; nameBox.style.width = "120px"; nameBox.style.color = "#8e44ad"; } 
-        else { nameBox.style.width = "50px"; nameBox.style.color = "#333"; }
-        nameBox.innerText = text;
-      }
     });
 
     function updateUI() {
