@@ -134,7 +134,7 @@
       <div id="start-overlay" class="overlay">
         <h1 style="color: #4cd137;">Multiverse Defense</h1>
         <div style="color:#ddd; margin-bottom: 25px; text-align:center; line-height: 1.6;">
-          <b>Tier 10 (HWP) ➡️ Tier 20 (PPT) ➡️ Tier 30 (DEV/BSOD)</b><br/>
+          <b>Tier 30 (HWP) ➡️ Tier 60 (PPT) ➡️ Tier 90 (DEV/BSOD)</b><br/>
           차원이 변할 때마다 무적 패턴과 흉악한 레이드 보스가 등장합니다.<br/>
           총 25종의 타워를 조합하여 최후의 블루스크린을 막아내세요!
         </div>
@@ -186,13 +186,16 @@
     };
 
     function getDimObj(tier) {
-      if (tier < 10) return DIMENSIONS.EXCEL;
-      if (tier < 20) return DIMENSIONS.HWP;
-      if (tier < 30) return DIMENSIONS.PPT;
+      if (tier < 30) return DIMENSIONS.EXCEL;
+      if (tier < 60) return DIMENSIONS.HWP;
+      if (tier < 90) return DIMENSIONS.PPT;
       return DIMENSIONS.DEV;
     }
     function getDimName(tier) {
-      if (tier < 10) return "EXCEL"; if (tier < 20) return "HWP"; if (tier < 30) return "PPT"; return "DEV";
+      if (tier < 30) return "EXCEL"; 
+      if (tier < 60) return "HWP"; 
+      if (tier < 90) return "PPT"; 
+      return "DEV";
     }
 
     // --- 25종 타워 스펙 ---
