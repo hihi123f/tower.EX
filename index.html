@@ -86,10 +86,7 @@
     
     /* 제작 가능한 타워 강조 효과 */
     .tower-btn { opacity: 0.8; transition: all 0.3s ease; }
-    .tower-btn.craftable {
-      opacity: 1;
-      animation: craftable-glow 1.5s infinite alternate;
-    }
+    .tower-btn.craftable { opacity: 1; animation: craftable-glow 1.5s infinite alternate; }
     @keyframes craftable-glow {
       from { box-shadow: 0 0 5px rgba(241, 196, 15, 0.5); border-color: #f1c40f; }
       to { box-shadow: 0 0 15px rgba(241, 196, 15, 1); border-color: #f39c12; }
@@ -104,7 +101,7 @@
     .modal-item { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #ccc; } .modal-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     .m-title { font-weight: bold; font-size: 13px; } .m-sub { font-size: 10px; color: #555; margin: 2px 0; font-family: monospace; font-weight:bold; } .m-desc { font-size: 11px; color: #333; }
     
-    /* 증강(Augment) UI 스타일 */
+    /* 증강 UI 스타일 */
     #augment-overlay { display: none; position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.85); z-index: 100; flex-direction: column; align-items: center; justify-content: center; }
     .aug-title-text { color: #fff; font-size: 32px; font-weight: bold; margin-bottom: 40px; text-shadow: 0 0 15px rgba(255,255,255,0.5); }
     #augment-cards-container { display: flex; gap: 25px; }
@@ -114,10 +111,8 @@
     .aug-name { font-size: 24px; font-weight: bold; color: #fff; margin-bottom: 20px; }
     .aug-desc { font-size: 14px; color: #ccc; line-height: 1.5; word-break: keep-all; }
     
-    .tier-Silver { border: 3px solid #bdc3c7; box-shadow: 0 0 15px rgba(189,195,199,0.5); }
-    .tier-Silver .aug-tier { color: #bdc3c7; }
-    .tier-Gold { border: 3px solid #f1c40f; box-shadow: 0 0 25px rgba(241,196,15,0.6); }
-    .tier-Gold .aug-tier { color: #f1c40f; }
+    .tier-Silver { border: 3px solid #bdc3c7; box-shadow: 0 0 15px rgba(189,195,199,0.5); } .tier-Silver .aug-tier { color: #bdc3c7; }
+    .tier-Gold { border: 3px solid #f1c40f; box-shadow: 0 0 25px rgba(241,196,15,0.6); } .tier-Gold .aug-tier { color: #f1c40f; }
     .tier-Prismatic { border: 4px solid transparent; background-image: linear-gradient(#222, #222), linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff); background-origin: border-box; background-clip: padding-box, border-box; box-shadow: 0 0 35px rgba(255, 255, 255, 0.4); animation: holo 3s linear infinite; }
     .tier-Prismatic .aug-tier { background: linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff); -webkit-background-clip: text; color: transparent; }
     @keyframes holo { 100% { filter: hue-rotate(360deg); } }
@@ -140,12 +135,17 @@
       <div class="stat-badge">🚦 트래픽: <span id="enemy-count" class="traffic-green">0</span> / 300</div>
       <div class="stat-badge">💰 예산: $<span id="budget">300</span></div>
       <div class="stat-badge" id="tier-badge">📈 티어: 1 (EXCEL)</div>
+      
+      <!-- 🎯 로컬스토리지 최고 기록 뱃지 -->
+      <div class="stat-badge" style="color:#d35400;">🏆 최고 기록: <span id="best-tier-badge">1</span></div>
+      
       <div style="margin-left: auto; display:flex;">
         <button class="btn-toolbar btn-pause" id="pause-btn" onclick="togglePause()">⏸️ 일시정지</button>
         <button class="btn-toolbar btn-full" onclick="goFullscreen()">📱 앱모드</button>
         <button class="btn-toolbar btn-quality" id="quality-btn" onclick="toggleQuality()">⚙️ 품질: 높음</button>
         <button class="btn-toolbar" onclick="toggleModal('info-modal')">❓ 타워 설명</button>
         <button class="btn-toolbar" onclick="toggleModal('recipe-modal')">📖 조합표</button>
+        <button class="btn-toolbar" onclick="toggleModal('augment-list-modal'); renderAugmentList();">📜 내 증강</button>
         <button class="btn-toolbar btn-toggle" id="sidebar-toggle-btn" onclick="toggleSidebar()">▶ 패널닫기</button>
       </div>
     </div>
@@ -168,14 +168,20 @@
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><strong style="font-size:16px;">📖 전체 시너지 조합표</strong><button onclick="toggleModal('recipe-modal')" style="cursor:pointer; border:none; background:none; font-weight:bold;">X</button></div>
           <div id="recipe-content"></div>
         </div>
+        <div id="augment-list-modal" class="modal">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <strong style="font-size:16px;">📜 획득한 증강 목록</strong>
+            <button onclick="toggleModal('augment-list-modal')" style="cursor:pointer; border:none; background:none; font-weight:bold;">X</button>
+          </div>
+          <div id="augment-list-content" style="font-size:12px; color:#333; line-height:1.5;">아직 획득한 증강이 없습니다.</div>
+        </div>
 
         <div id="tower-modal" class="modal" style="width: 260px; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 60; border-color: #27ae60;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <strong id="tm-title" style="font-size:18px;">타워 이름</strong>
             <button onclick="closeTowerModal()" style="cursor:pointer; border:none; background:none; font-weight:bold; font-size:16px;">X</button>
           </div>
-          <div id="tm-stats" style="margin-bottom: 15px; font-size: 13px; line-height: 1.6; color: #333;">
-          </div>
+          <div id="tm-stats" style="margin-bottom: 15px; font-size: 13px; line-height: 1.6; color: #333;"></div>
           <div style="display: flex; gap: 10px;">
             <button id="tm-upgrade" class="btn-toolbar btn-quality" style="flex: 1; padding: 10px; margin: 0;">업그레이드</button>
             <button id="tm-sell" class="btn-toolbar btn-pause" style="flex: 1; padding: 10px; margin: 0;">판매</button>
@@ -185,10 +191,10 @@
         <div id="start-overlay" class="overlay">
           <h1 style="color: #4cd137;">Multiverse Defense</h1>
           <div style="color:#ddd; margin-bottom: 25px; text-align:center; line-height: 1.6;">
-            <b>🛠️ 최종 완성본 적용 완료</b><br/><br/>
-            - 타워를 <b>길게 터치(우클릭)</b>하면 70% 환불 후 철거됩니다.<br/>
-            - 렉 방지를 원하면 <b>[⚙️ 품질: 낮음]</b>으로 설정하세요.<br/>
-            - 전체 화면을 원하면 <b>[📱 앱모드]</b>를 누르세요.
+            <b>🛠️ 아레나 증강 & 도감 업데이트!</b><br/><br/>
+            - 타워를 <b>우클릭(모바일 길게 터치)</b> 시 판매됩니다.<br/>
+            - 15 스테이지마다 보스가 확정 출현하며 증강을 줍니다.<br/>
+            - 미발견 상위 타워는 직접 조합해야 도감에 해금됩니다.
           </div>
           <button class="btn-action" onclick="startGame()">▶ 게임 시작</button>
         </div>
@@ -216,17 +222,20 @@
   </div>
 
   <script>
-    let highQuality = true;
+    // 🎯 로컬스토리지 연동 (품질 설정, 최고 기록, 도감)
+    let highQuality = localStorage.getItem("md_quality") === "false" ? false : true;
+    let bestTier = parseInt(localStorage.getItem("md_best_tier")) || 1;
+    let discoveredRecipes = JSON.parse(localStorage.getItem("multiverse_recipes") || "[]");
+
     function toggleQuality() {
       highQuality = !highQuality;
+      localStorage.setItem("md_quality", highQuality); 
       const btn = document.getElementById("quality-btn");
       btn.innerText = highQuality ? "⚙️ 품질: 높음" : "⚙️ 품질: 낮음";
       btn.style.background = highQuality ? "#16a085" : "#7f8c8d";
     }
 
-    let sidebarOpen = true;
-    let baseWidth = 1160; 
-
+    let sidebarOpen = true; let baseWidth = 1160; 
     function resizeWindow() {
       const win = document.getElementById('excel-window');
       const scale = Math.min(window.innerWidth / baseWidth, window.innerHeight / 590);
@@ -256,16 +265,69 @@
     }
 
     function toggleModal(id) {
-      ['info-modal', 'recipe-modal'].forEach(m => {
+      ['info-modal', 'recipe-modal', 'augment-list-modal'].forEach(m => {
         const el = document.getElementById(m);
-        el.style.display = (m === id && el.style.display !== 'block') ? 'block' : 'none';
+        if (el) el.style.display = (m === id && el.style.display !== 'block') ? 'block' : 'none';
       });
+    }
+
+    // 🎯 [추가됨] 증강 통계용 전역 변수
+    let activeAugments = [];
+    let stat_execute = 0; let stat_explosion = 0; let stat_discount = 0; let stat_poisonSpread = 0;
+    let stat_critDmg = 0; let stat_gamble = 0; let stat_bossGold = 0; let stat_doubleCast = 0;
+    let stat_freezeDmg = 0; let stat_cosmicDmg = 0; let stat_giantDmg = 0; let stat_mansour = 0;
+
+    // 🎯 [추가됨] 증강 통계 렌더링 함수
+    function renderAugmentList() {
+      const container = document.getElementById("augment-list-content");
+      if (activeAugments.length === 0) {
+        container.innerHTML = "아직 획득한 증강이 없습니다."; return;
+      }
+      let html = "";
+      activeAugments.forEach(aug => {
+        let statText = "";
+        if (aug.name === "단두대 처형") statText = `처형한 적: <b>${stat_execute}</b> 마리`;
+        else if (aug.name === "연쇄 반응") statText = `누적 폭발 딜: <b>${Math.floor(stat_explosion).toLocaleString()}</b>`;
+        else if (aug.name === "알뜰 살뜰") statText = `절약한 예산: <b>$${Math.floor(stat_discount).toLocaleString()}</b>`;
+        else if (aug.name === "맹독 확산") statText = `독 전염 횟수: <b>${stat_poisonSpread}</b> 회`;
+        else if (aug.name === "치명적인 일격") statText = `추가 치명타 딜: <b>${Math.floor(stat_critDmg).toLocaleString()}</b>`;
+        else if (aug.name === "도박 중독") statText = `획득한 골드: <b>$${stat_gamble.toLocaleString()}</b>`;
+        else if (aug.name === "초전도 과부하") statText = `번개 효율 극대화 적용 중`;
+        else if (aug.name === "유리 대포") statText = `공격력 100% 증가 적용 중`;
+        else if (aug.name === "황금빛 갈취") statText = `갈취한 골드: <b>$${stat_bossGold.toLocaleString()}</b>`;
+        else if (aug.name === "시너지 마스터") statText = `조합 타워 위력 폭증 적용 중`;
+        else if (aug.name === "요술사의 장갑") statText = `추가 발사 횟수: <b>${stat_doubleCast}</b> 번`;
+        else if (aug.name === "영구 동토") statText = `증폭된 피해량: <b>${Math.floor(stat_freezeDmg).toLocaleString()}</b>`;
+        else if (aug.name === "우주적 파멸") statText = `궤도 폭격 딜: <b>${Math.floor(stat_cosmicDmg).toLocaleString()}</b>`;
+        else if (aug.name === "만수르의 축복") statText = `지급/환불 이득: <b>$${Math.floor(stat_mansour).toLocaleString()}</b>`;
+        else if (aug.name === "거인 학살자") statText = `체력 비례 추가 딜: <b>${Math.floor(stat_giantDmg).toLocaleString()}</b>`;
+
+        const color = aug.tier === "Silver" ? "#bdc3c7" : (aug.tier === "Gold" ? "#f1c40f" : "#a29bfe");
+        html += `<div class="modal-item">
+          <div class="m-title" style="color:${color};">[${aug.tier}] ${aug.name}</div>
+          <div class="m-desc">${aug.desc}</div>
+          <div style="margin-top:4px; font-size:11px; color:#d35400;">📊 ${statText}</div>
+        </div>`;
+      });
+      container.innerHTML = html;
     }
 
     const canvas = document.getElementById("gameCanvas"); 
     const ctx = canvas.getContext("2d");
     const CELL_W = 55; const CELL_H = 30; const HEADER_W = 40; const HEADER_H = 25;
-    const COLS = 15; const ROWS = 15; const MAX_ENEMIES = 300;
+    const COLS = 15; const ROWS = 15; 
+    
+    // --- 시스템 및 증강 전역 변수 ---
+    let MAX_ENEMIES = 300;
+    let globalDmgMult = 1.0; let globalCostMult = 1.0; let globalRateMult = 1.0; let globalRangeMult = 1.0; let refundRate = 0.7;
+    let executeThreshold = 0; let deathExplosion = false; let baseCostMult = 1.0; let poisonSpread = false; let critChance = 0;
+    let bossHitGold = 0; let chainMultiplier = 1; let chainRangeMult = 1.0; let synergyDmgMult = 1.0;
+    let doubleCast = false; let stunnedDmgMult = 1.0; let cosmicRuin = false; let giantSlayer = 0;
+
+    let gameState = 0; let budget = 300; let selectedTower = "SUM";
+    let gameTime = 0; let frame = 0; let screenShake = 0; let currentTier = 1; let currentDimName = "EXCEL"; let bsodFlash = 0;
+
+    let towers = []; let enemies = []; let projectiles = []; let particles = []; let floatingTexts = []; let shockwaves = []; let lightnings = [];
 
     const dpr = window.devicePixelRatio || 1;
     canvas.style.width = "880px"; canvas.style.height = "490px";
@@ -281,9 +343,7 @@
     function getGridPos(e) {
       const rect = canvas.getBoundingClientRect();
       let cx = e.clientX; let cy = e.clientY;
-      if (cx === undefined && e.changedTouches) {
-        cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY;
-      }
+      if (cx === undefined && e.changedTouches) { cx = e.changedTouches[0].clientX; cy = e.changedTouches[0].clientY; }
       const scaleX = 880 / rect.width; const scaleY = 490 / rect.height;
       const x = (cx - rect.left) * scaleX - HEADER_W; const y = (cy - rect.top) * scaleY - HEADER_H;
       return { col: Math.floor(x / CELL_W), row: Math.floor(y / CELL_H), isValid: (x >= 0 && y >= 0) };
@@ -299,16 +359,15 @@
     function getDimName(tier) { if (tier < 30) return "EXCEL"; if (tier < 60) return "HWP"; if (tier < 90) return "PPT"; return "DEV"; }
 
     const TOWER_SPECS = {
-      // 🎯 [수정됨] 기본 타워들에 unlockTier(해금 티어) 추가
       SUM: { type:"base", cost: 40, range: 110, rate: 16, dmg: 40, color: "#107c41", name: "SUM", desc:"가장 기본적인 단일 공격", unlockTier: 1 },
       IFERROR: { type:"base", cost: 60, range: 100, rate: 3, dmg: 10, color: "#d83b01", name: "IFERR", isBeam: true, desc:"적의 이동속도를 늦춤", unlockTier: 1 },
       MIN: { type:"base", cost: 70, range: 100, rate: 45, dmg: 60, color: "#3498db", name: "MIN", stun: 12, desc:"적을 짧게 얼림(경직)", unlockTier: 1 },
-      VLOOKUP: { type:"base", cost: 90, range: 145, rate: 50, dmg: 110, color: "#0078d4", name: "VLOOK", splash: 75, desc:"주변 적 광역(Splash) 타격", unlockTier: 2 },
-      AVERAGE: { type:"base", cost: 100, range: 125, rate: 35, dmg: 40, color: "#9b59b6", name: "AVG", multi: 3, desc:"3명의 적을 동시 타격", unlockTier: 2 },
-      RATE: { type:"base", cost: 80, range: 120, rate: 30, dmg: 30, color: "#2ecc71", name: "RATE", poisonSpec: { dmg: 2, time: 180 }, desc:"적에게 3초간 지속 독 데미지", unlockTier: 3 },
-      POWER: { type:"base", cost: 100, range: 110, rate: 40, dmg: 70, color: "#f1c40f", name: "POWER", chain: 3, desc:"적중 시 3명의 적에게 연쇄 번개", unlockTier: 4 },
+      VLOOKUP: { type:"base", cost: 90, range: 145, rate: 50, dmg: 110, color: "#0078d4", name: "VLOOK", splash: 75, desc:"주변 적 광역(Splash) 타격", unlockTier: 3 },
+      AVERAGE: { type:"base", cost: 100, range: 125, rate: 35, dmg: 40, color: "#9b59b6", name: "AVG", multi: 3, desc:"3명의 적을 동시 타격", unlockTier: 5 },
+      RATE: { type:"base", cost: 80, range: 120, rate: 30, dmg: 30, color: "#2ecc71", name: "RATE", poisonSpec: { dmg: 1.5, time: 420 }, desc:"적에게 7초간 서서히 피를 말리는 맹독 부여", unlockTier: 8 },
+      POWER: { type:"base", cost: 100, range: 110, rate: 40, dmg: 70, color: "#f1c40f", name: "POWER", chain: 3, desc:"적중 시 3명의 적에게 연쇄 번개", unlockTier: 11 },
       PIVOT: { type:"epic", req: ["AVERAGE", "RATE"], range: 170, rate: 0, dmg: 0, color: "#e056fd", name: "PIVOT", aura: true, desc:"인접 아군 타워 공격력 대폭(+50%~) 및 사거리 증가 오라" },
-      MAX: { type:"base", cost: 130, range: 240, rate: 75, dmg: 350, color: "#8e44ad", name: "MAX", desc:"강력한 장거리 저격", unlockTier: 5 },
+      MAX: { type:"base", cost: 130, range: 240, rate: 75, dmg: 350, color: "#8e44ad", name: "MAX", desc:"강력한 장거리 저격", unlockTier: 14 },
       
       SUMIF: { type:"epic", req: ["SUM", "IFERROR"], range: 130, rate: 14, dmg: 200, color: "#e67e22", name: "SUMIF", pierce: true, desc:"방어 쉴드 무시 직접 타격" },
       COUNTIFS: { type:"epic", req: ["MAX", "SUM"], range: 180, rate: 4, dmg: 80, color: "#1abc9c", name: "CNTIFS", desc:"초고속 연사 기관총" },
@@ -332,10 +391,6 @@
       LAMBDA: { type:"hidden", req: ["VLOOKUP", "MAX", "IFERROR"], range: 260, rate: 5, dmg: 400, color: "#000", name: "LAMBDA", isBeam: true, splash: 120, pierce: true, desc:"[히든] 쉴드관통+슬로우+광역파괴 레이저" }
     };
 
-    // 🎯 [추가됨] 영구 도감 시스템 (발견한 조합식 저장)
-    let discoveredRecipes = JSON.parse(localStorage.getItem("multiverse_recipes") || "[]");
-
-    // 🎯 [수정됨] 동적 사이드바 및 모달 렌더링 함수
     function renderSidebarAndModals() {
       const container = document.getElementById('tower-selection');
       container.innerHTML = '';
@@ -351,23 +406,21 @@
         btn.className = `tower-btn ${t.type} ${key===selectedTower?'active':''}`; 
         btn.dataset.type = key;
         
-        // 기본 상점 타워 로직 (티어별 해금)
         if(t.type === 'base') { 
           if (currentTier >= t.unlockTier) {
-            btn.innerText = `=${t.name} ($${t.cost})`; 
+            const displayCost = Math.floor(t.cost * baseCostMult);
+            btn.innerText = `=${t.name} ($${displayCost})`; 
             infoHTML += `<div class="modal-item"><div class="m-title" style="color:${t.color}">=${key}</div><div class="m-desc">${t.desc}</div></div>`; 
           } else {
             btn.innerText = `[T${t.unlockTier} 해금]`;
             btn.classList.add('locked');
             btn.style.opacity = '0.3';
-            btn.style.pointerEvents = 'none'; // 미해금 시 클릭 방지
+            btn.style.pointerEvents = 'none'; 
           }
           baseRow.appendChild(btn); 
         } 
-        // 상위 조합식 로직 (도감 발견 여부)
         else {
           const isDiscovered = discoveredRecipes.includes(key);
-          
           if (t.type === 'epic') { epicRow.appendChild(btn); } 
           else if (t.type === 'ancient') { ancRow.appendChild(btn); } 
           else if (t.type === 'hidden') { btn.className = `tower-btn hidden-t ${key===selectedTower?'active':''}`; ancRow.appendChild(btn); }
@@ -385,7 +438,6 @@
       container.appendChild(baseRow); container.appendChild(epicRow); container.appendChild(ancRow);
       document.getElementById('info-content').innerHTML = infoHTML; document.getElementById('recipe-content').innerHTML = recipeHTML;
 
-      // 잠기지 않은 버튼에만 클릭 이벤트 부여
       document.querySelectorAll(".tower-btn").forEach(btn => {
         if (!btn.classList.contains("locked")) {
           btn.addEventListener("pointerdown", () => { Sound.init(); document.querySelectorAll(".tower-btn").forEach(b => b.classList.remove("active")); btn.classList.add("active"); selectedTower = btn.dataset.type; });
@@ -435,21 +487,24 @@
       synergy() { this.playOsc("sine", 600, 1500, 0.4, 0.2, 0); } 
     };
 
-    let gameState = 0; let budget = 300; let selectedTower = "SUM";
-    let gameTime = 0; let frame = 0; let screenShake = 0; let currentTier = 1; let currentDimName = "EXCEL"; let bsodFlash = 0;
-
-    let globalDmgMult = 1.0; let globalCostMult = 1.0; let globalRateMult = 1.0; let globalRangeMult = 1.0; let refundRate = 0.7;
-
     const AUGMENTS = [
-      { tier: "Silver", name: "예산 절감", desc: "모든 타워의 업그레이드 비용 15% 감소", effect: () => { globalCostMult *= 0.85; } },
-      { tier: "Silver", name: "단기 집중", desc: "모든 타워의 공격력 20% 증가", effect: () => { globalDmgMult *= 1.20; } },
-      { tier: "Silver", name: "렌즈 확장", desc: "모든 타워의 사거리 20% 증가", effect: () => { globalRangeMult *= 1.20; } },
-      { tier: "Gold", name: "철거반", desc: "타워 철거(판매) 시 환불률 95%로 증가", effect: () => { refundRate = 0.95; } },
-      { tier: "Gold", name: "초정밀 윤활유", desc: "모든 타워의 공격 속도 25% 증가", effect: () => { globalRateMult *= 0.75; } },
-      { tier: "Gold", name: "시드 머니", desc: "즉시 예산 +$1500 획득", effect: () => { budget += 1500; } },
-      { tier: "Prismatic", name: "무한의 대검", desc: "모든 타워의 공격력 60% 증가", effect: () => { globalDmgMult *= 1.6; } },
-      { tier: "Prismatic", name: "초전도체", desc: "공격 속도 40% 증가 & 사거리 40% 증가", effect: () => { globalRateMult *= 0.6; globalRangeMult *= 1.4; } },
-      { tier: "Prismatic", name: "만수르", desc: "즉시 예산 +$5000 획득", effect: () => { budget += 5000; } }
+      { tier: "Silver", name: "단두대 처형", desc: "적 체력이 15% 이하가 되면 남은 체력 무시 즉시 처형", effect: () => { executeThreshold = 0.15; } },
+      { tier: "Silver", name: "연쇄 반응", desc: "적 사망 시 30% 확률로 주변(100px)에 100 데미지 폭발", effect: () => { deathExplosion = true; } },
+      { tier: "Silver", name: "알뜰 살뜰", desc: "기본 타워(1티어) 설치 비용 50% 할인", effect: () => { baseCostMult = 0.5; towers.forEach(t=>t.updateStats()); } },
+      { tier: "Silver", name: "맹독 확산", desc: "독에 걸린 적 사망 시 주변 적에게 맹독 전염", effect: () => { poisonSpread = true; } },
+      { tier: "Silver", name: "치명적인 일격", desc: "모든 공격 시 20% 확률로 2배의 치명타 피해", effect: () => { critChance = 0.2; } },
+      
+      { tier: "Gold", name: "도박 중독", desc: "즉시 $1,000 ~ $4,000 랜덤 획득", effect: () => { const g = Math.floor(Math.random()*3001)+1000; budget+=g; stat_gamble+=g; floatingTexts.push(new FloatingText(880/2, 490/2+40, `+$${g} 잭팟!`, "#f1c40f", true, 60)); } },
+      { tier: "Gold", name: "초전도 과부하", desc: "연쇄 번개(Chain) 튕기는 횟수 2배 및 사거리 대폭 증가", effect: () => { chainMultiplier = 2; chainRangeMult = 2.0; } },
+      { tier: "Gold", name: "유리 대포", desc: "모든 타워 공격력 100% 증가, 단 트래픽 최대 수용량 150으로 반토막", effect: () => { globalDmgMult *= 2.0; MAX_ENEMIES = 150; towers.forEach(t=>t.updateStats()); } },
+      { tier: "Gold", name: "황금빛 갈취", desc: "보스 타격 시마다 $10 획득 (보스가 돈줄로 변함)", effect: () => { bossHitGold = 10; } },
+      { tier: "Gold", name: "시너지 마스터", desc: "조합 타워(에픽/고대/히든) 기본 공격력 50% 폭증", effect: () => { synergyDmgMult = 1.5; towers.forEach(t=>t.updateStats()); } },
+      
+      { tier: "Prismatic", name: "요술사의 장갑", desc: "[더블 캐스트] 모든 투사체 타워가 100% 확률로 2연속 발사", effect: () => { doubleCast = true; } },
+      { tier: "Prismatic", name: "영구 동토", desc: "기절/경직 상태인 적이 받는 모든 피해량 2배 증폭", effect: () => { stunnedDmgMult = 2.0; } },
+      { tier: "Prismatic", name: "우주적 파멸", desc: "5초마다 맵 전체에 무작위 궤도 폭격 (광역 피해+기절)", effect: () => { cosmicRuin = true; } },
+      { tier: "Prismatic", name: "만수르의 축복", desc: "즉시 $10,000 획득 + 타워 판매 시 100% 전액 환불", effect: () => { budget += 10000; stat_mansour += 10000; refundRate = 1.0; } },
+      { tier: "Prismatic", name: "거인 학살자", desc: "모든 공격에 적의 현재 체력 5% 비례 고정 피해 추가", effect: () => { giantSlayer = 0.05; } }
     ];
 
     function showAugments() {
@@ -457,7 +512,7 @@
       const choices = [];
       while(choices.length < 3) {
          const r = Math.random();
-         const targetTier = r < 0.15 ? "Prismatic" : (r < 0.5 ? "Gold" : "Silver");
+         const targetTier = r < 0.05 ? "Prismatic" : (r < 0.35 ? "Gold" : "Silver");
          const pool = AUGMENTS.filter(a => a.tier === targetTier);
          const aug = pool[Math.floor(Math.random() * pool.length)];
          if(!choices.includes(aug)) choices.push(aug);
@@ -470,20 +525,17 @@
          card.innerHTML = `<div class="aug-tier">${aug.tier.toUpperCase()} 증강</div><div class="aug-name">${aug.name}</div><div class="aug-desc">${aug.desc}</div>`;
          card.onclick = () => {
              aug.effect();
+             activeAugments.push(aug); // 🎯 증강 목록에 추가
              towers.forEach(t => t.updateStats()); 
              document.getElementById("augment-overlay").style.display = "none";
              floatingTexts.push(new FloatingText(880/2, 490/2, `[${aug.name}] 적용 완료!`, "#00ff00", true, 80));
-             Sound.synergy(); updateUI();
-             gameState = 1; 
-             requestAnimationFrame(gameLoop);
+             Sound.synergy(); updateUI(); renderSidebarAndModals(); 
+             gameState = 1; requestAnimationFrame(gameLoop);
          };
          container.appendChild(card);
       });
       document.getElementById("augment-overlay").style.display = "flex";
     }
-
-    let towers = []; let enemies = []; let projectiles = []; let particles = []; let floatingTexts = []; let shockwaves = [];
-    let lightnings = [];
 
     class ErrorEnemy {
       constructor(tier, isBoss = false, overrideType = null, startProgress = 0, track = null) {
@@ -501,7 +553,7 @@
         else this.type = "NORMAL";
 
         this.baseSpeed = 1.3 + Math.min(2.5, tier * 0.1);
-        const baseHp = 35 * Math.pow(1.3, tier - 1);
+        const baseHp = 35 * Math.pow(1.15, tier - 1);
         this.maxShield = 0;
         
         const tagSplit = dimName==="EXCEL" ? "#SPILL!" : (dimName==="HWP" ? "구역나누기" : (dimName==="PPT" ? "슬라이드복제" : "Fork()"));
@@ -585,7 +637,9 @@
         if (this.poisonTimer > 0) {
           this.poisonTimer--;
           this.hp -= this.poisonDmg; 
-          if (frame % 30 === 0 && Math.random() > 0.3) floatingTexts.push(new FloatingText(this.x, this.y - 20, "독!", "#2ecc71", false, 30));
+          if (frame % 45 === 0) {
+            floatingTexts.push(new FloatingText(this.x + (Math.random() - 0.5) * 15, this.y - 20, "🫧독", "#2ecc71", false, 35));
+          }
         }
 
         if (this.stunTimer > 0) { this.stunTimer--; this.hitFlash = Math.max(this.hitFlash, 1); } 
@@ -603,37 +657,68 @@
       
       takeDamage(dmg, pierce = false, stunTime = 0, poisonSpec = null) {
         if (this.isInvincible) { floatingTexts.push(new FloatingText(this.x, this.y - 20, "IMMUNE!", "#f1c40f", true)); return; }
-        
         if (poisonSpec) { this.poisonTimer = poisonSpec.time; this.poisonDmg = poisonSpec.dmg; }
 
         let actualDmg = dmg;
+        
+        // 💎 거인 학살자
+        if (giantSlayer > 0) {
+            const gsDmg = this.hp * giantSlayer;
+            actualDmg += gsDmg;
+            stat_giantDmg += gsDmg;
+        }
+        
+        // 🥈 치명적인 일격
+        let isCrit = false;
+        if (critChance > 0 && Math.random() < critChance) { 
+            stat_critDmg += actualDmg; // 증가분 누적
+            actualDmg *= 2; 
+            isCrit = true; 
+        }
+        
+        // 💎 영구 동토
+        if (this.stunTimer > 0 && stunnedDmgMult > 1.0) {
+            stat_freezeDmg += actualDmg * (stunnedDmgMult - 1);
+            actualDmg *= stunnedDmgMult;
+        }
+
+        // 🥇 황금빛 갈취
+        if (this.isBoss && bossHitGold > 0) {
+            budget += bossHitGold;
+            stat_bossGold += bossHitGold;
+            floatingTexts.push(new FloatingText(this.x + (Math.random()-0.5)*20, this.y - 20, `+$${bossHitGold}`, "#f1c40f", false, 20));
+        }
+
         if (this.shield > 0 && !pierce) { 
-          
-          Sound.hitShield();
-          this.shieldHitTimer = 15; 
+          Sound.hitShield(); this.shieldHitTimer = 15; 
           if(highQuality) { for(let i=0; i<4; i++) particles.push(new HexParticle(this.x, this.y, "#00ffff", 5)); }
-          
           if (actualDmg > this.shield) { actualDmg -= this.shield; this.shield = 0; this.hp -= actualDmg; } 
           else { this.shield -= actualDmg; } 
-        } 
-        else { this.hp -= actualDmg; }
+        } else { this.hp -= actualDmg; }
         
-        if (this.shield <= 0) {
-          if (stunTime > 0) this.stunTimer = Math.max(this.stunTimer, stunTime);
-        }
+        if (this.shield <= 0 && stunTime > 0) this.stunTimer = Math.max(this.stunTimer, stunTime);
 
         if (this.hp <= 0 && this.type === "SPLITTER" && !this.hasSplit) {
           this.hasSplit = true;
-          const offset = 0.01; 
-          enemies.push(new ErrorEnemy(this.tier, false, "NORMAL", Math.max(0, this.progress - offset), this.track));
-          enemies.push(new ErrorEnemy(this.tier, false, "NORMAL", Math.max(0, this.progress + offset), this.track));
-          
+          enemies.push(new ErrorEnemy(this.tier, false, "NORMAL", Math.max(0, this.progress - 0.01), this.track));
+          enemies.push(new ErrorEnemy(this.tier, false, "NORMAL", Math.max(0, this.progress + 0.01), this.track));
           floatingTexts.push(new FloatingText(this.x, this.y, "분열!", "#9b59b6", true, 40));
           if(highQuality) shockwaves.push(new Shockwave(this.x, this.y, 45, "#9b59b6"));
         }
         
+        // 🥈 단두대 처형
+        if (this.hp > 0 && executeThreshold > 0 && this.hp <= this.maxHp * executeThreshold) {
+            this.hp = 0;
+            stat_execute++;
+            floatingTexts.push(new FloatingText(this.x, this.y - 30, "처형!", "#ff0000", true, 40));
+            if(highQuality) shockwaves.push(new Shockwave(this.x, this.y, 50, "#ff0000"));
+        }
+
         this.hitFlash = this.stunTimer > 0 ? 1 : 3; this.scale = this.baseScale * 1.2;
-        if (Math.random() > 0.5) floatingTexts.push(new FloatingText(this.x, this.y - 15, Math.round(dmg), pierce ? "#f1c40f" : "#fff", pierce));
+        if (Math.random() > 0.5 || isCrit) {
+            const textCol = isCrit ? "#ff9f43" : (pierce ? "#f1c40f" : "#fff");
+            floatingTexts.push(new FloatingText(this.x, this.y - 15, isCrit ? `💥${Math.round(actualDmg)}` : Math.round(actualDmg), textCol, isCrit || pierce));
+        }
       }
       draw() {
         ctx.save(); ctx.translate(this.x, this.y);
@@ -650,7 +735,7 @@
         ctx.fillStyle = bgColor; ctx.strokeStyle = borderColor; ctx.lineWidth = this.hitFlash > 0 || this.isInvincible || this.poisonTimer > 0 ? 2 : 1;
         
         if (this.dimName === "PPT") { ctx.beginPath(); ctx.moveTo(0, -12); ctx.lineTo(24, 12); ctx.lineTo(-24, 12); ctx.closePath(); ctx.fill(); ctx.stroke(); }
-        else if (this.dimName === "HWP") { ctx.fillRect(-24, -12, 48, 24); ctx.strokeRect(-24, -12, 48, 24); } // roundRect 버그 방지
+        else if (this.dimName === "HWP") { ctx.fillRect(-24, -12, 48, 24); ctx.strokeRect(-24, -12, 48, 24); } 
         else { ctx.fillRect(-22, -9, 44, 18); ctx.strokeRect(-22, -9, 44, 18); }
 
         ctx.fillStyle = this.hitFlash > 0 && !isStunned ? "#000" : (isStunned ? "#0097a7" : (this.isBoss?"#ff3838":themeCol));
@@ -688,39 +773,34 @@
         this.col = col; this.row = row; const pos = gridToPixel(col, row);
         this.x = pos.x; this.y = pos.y; this.type = type; this.baseSpec = TOWER_SPECS[type];
         this.isSynergy = !!this.baseSpec.req; this.level = 1; 
-        this.totalSpent = this.isSynergy ? (this.baseSpec.req.length > 2 ? 300 : 150) : this.baseSpec.cost;
+        
+        const initialCost = this.isSynergy ? (this.baseSpec.req.length > 2 ? 300 : 150) : Math.floor(this.baseSpec.cost * baseCostMult);
+        this.totalSpent = initialCost;
+        
         this.cooldown = 0; this.recoil = 0; this.laserTargets = [];
         this.totalDamageDealt = 0; 
         this.updateStats(); 
       }
       
       updateStats() {
-        // 🎯 [추가됨] 오라 타워(PIVOT) 버프 계산 로직 (중복 시 가장 높은 레벨 1개만 적용)
-        let auraDmgMult = 1.0;
-        let auraRangeMult = 1.0;
-
+        let auraDmgMult = 1.0; let auraRangeMult = 1.0;
         if (!this.baseSpec.aura) {
           towers.forEach(t => {
-            if (t.baseSpec.aura && t !== this) {
-              const dist = Math.hypot(this.x - t.x, this.y - t.y);
-              if (dist <= t.range) { 
-                // PIVOT 레벨당 효율 (기본 공격력 +50%, 사거리 +15%, 레벨업 시 추가 상승)
-                const bDmg = 1.5 + (t.level - 1) * 0.2; 
-                const bRange = 1.15 + (t.level - 1) * 0.03;
+            if (t.baseSpec.aura && t !== this && Math.hypot(this.x - t.x, this.y - t.y) <= t.range) { 
+                const bDmg = 1.5 + (t.level - 1) * 0.2; const bRange = 1.15 + (t.level - 1) * 0.03;
                 if (bDmg > auraDmgMult) auraDmgMult = bDmg;
                 if (bRange > auraRangeMult) auraRangeMult = bRange;
-              }
             }
           });
         }
-
-        // 🎯 계산된 오라 배율을 스탯에 곱해서 최종 반영
-        this.dmg = (this.baseSpec.dmg * Math.pow(1.45, this.level - 1)) * globalDmgMult * auraDmgMult;    
-        const baseCost = this.isSynergy ? (this.baseSpec.req.length > 2 ? 300 : 150) : this.baseSpec.cost;
+        
+        let finalDmg = (this.baseSpec.dmg * Math.pow(1.45, this.level - 1)) * globalDmgMult * auraDmgMult;
+        if (this.isSynergy) finalDmg *= synergyDmgMult;
+        this.dmg = finalDmg;
+        
+        const baseCost = this.isSynergy ? (this.baseSpec.req.length > 2 ? 300 : 150) : (this.baseSpec.cost * baseCostMult);
         this.upgradeCost = Math.floor((baseCost * Math.pow(1.2, this.level)) * globalCostMult);
-        
         this.range = (this.baseSpec.range * (1 + (this.level - 1) * 0.01)) * globalRangeMult * auraRangeMult; 
-        
         this.rate = Math.max(2, Math.round((this.baseSpec.rate - (this.level - 1) * 0.4) * globalRateMult));
         
         const maxLvl = this.baseSpec.type === "base" ? 5 : (this.baseSpec.type === "epic" ? 10 : 15);
@@ -738,7 +818,7 @@
           budget -= this.upgradeCost; this.totalSpent += this.upgradeCost; 
           this.level++; 
           
-          towers.forEach(t => t.updateStats()); // 업그레이드 시 오라 재계산을 위해 전체 갱신
+          towers.forEach(t => t.updateStats()); 
           
           Sound.upgrade();
           floatingTexts.push(new FloatingText(this.x, this.y - 20, "UP!", this.baseSpec.color, true, 20)); return true;
@@ -747,20 +827,14 @@
       
       update() {
         if (this.recoil > 0) this.recoil--; if (this.cooldown > 0) this.cooldown--;
-        
-        // 🎯 [추가됨] 피벗(오라) 타워는 공격을 하지 않고, 1.5초마다 영역 파동 발생
         if (this.baseSpec.aura) {
-          if (this.cooldown <= 0) {
-            this.cooldown = 90; 
-            if (highQuality) shockwaves.push(new Shockwave(this.x, this.y, this.range, this.baseSpec.color));
-          }
-          return; // 공격 로직 생략
+          if (this.cooldown <= 0) { this.cooldown = 90; if (highQuality) shockwaves.push(new Shockwave(this.x, this.y, this.range, this.baseSpec.color)); }
+          return;
         }
 
         let targets = [];
         if (this.baseSpec.multi) {
-          targets = enemies.filter(e => Math.hypot(e.x - this.x, e.y - this.y) <= this.range)
-                           .sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y)).slice(0, this.baseSpec.multi);
+          targets = enemies.filter(e => Math.hypot(e.x - this.x, e.y - this.y) <= this.range).sort((a,b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y)).slice(0, this.baseSpec.multi);
         } else {
           let best = null; let minDist = this.range;
           for (let e of enemies) { const d = Math.hypot(e.x - this.x, e.y - this.y); if (d <= minDist) { if (!best || e.isBoss || (!best.isBoss && d < minDist)) { minDist = d; best = e; } } }
@@ -771,16 +845,9 @@
           this.laserTargets = targets;
           if (this.cooldown <= 0) {
             targets.forEach(t => {
-              t.takeDamage(this.dmg, this.baseSpec.pierce, this.baseSpec.stun || 0);
-              this.totalDamageDealt += this.dmg; 
-              
+              t.takeDamage(this.dmg, this.baseSpec.pierce, this.baseSpec.stun || 0); this.totalDamageDealt += this.dmg; 
               if (this.baseSpec.splash) {
-                enemies.forEach(e => { 
-                  if (e !== t && Math.hypot(e.x - t.x, e.y - t.y) <= this.baseSpec.splash) {
-                    e.takeDamage(this.dmg * 0.5, true); 
-                    this.totalDamageDealt += (this.dmg * 0.5); 
-                  }
-                });
+                enemies.forEach(e => { if (e !== t && Math.hypot(e.x - t.x, e.y - t.y) <= this.baseSpec.splash) { e.takeDamage(this.dmg * 0.5, true); this.totalDamageDealt += (this.dmg * 0.5); } });
                 if(highQuality) shockwaves.push(new Shockwave(t.x, t.y, this.baseSpec.splash, this.baseSpec.color));
               }
               t.currentSpeed = t.speed * Math.max(0.1, 0.4 - (this.level * 0.02)); t.slowTimer = 10; 
@@ -790,7 +857,14 @@
         } else {
           this.laserTargets = [];
           if (targets.length > 0 && this.cooldown <= 0) {
-            targets.forEach(t => projectiles.push(new Projectile(this.x, this.y, t, this)));
+            targets.forEach(t => {
+              projectiles.push(new Projectile(this.x, this.y, t, this));
+              if (doubleCast) {
+                  const p2 = new Projectile(this.x + (Math.random()-0.5)*15, this.y + (Math.random()-0.5)*15, t, this);
+                  projectiles.push(p2);
+                  stat_doubleCast++; // 추가 발사 카운트
+              }
+            });
             this.cooldown = this.rate; this.recoil = 5; Sound.shoot(this.type);
           }
         }
@@ -799,7 +873,7 @@
       draw() {
         const cellLeft = HEADER_W + this.col * CELL_W; const cellTop = HEADER_H + this.row * CELL_H;
         ctx.fillStyle = this.type === "LAMBDA" ? "#111" : (this.isSynergy ? "#fdebd0" : (this.level > 1 ? `hsla(${this.level*25}, 80%, 75%, 0.3)` : "#e8f5e9"));
-        if (this.baseSpec.aura) ctx.fillStyle = "#ffebcc"; // 오라 타워 전용 황금빛 타일
+        if (this.baseSpec.aura) ctx.fillStyle = "#ffebcc"; 
         
         ctx.fillRect(cellLeft + 1, cellTop + 1, CELL_W - 2, CELL_H - 2);
         ctx.strokeStyle = this.type === "LAMBDA" ? "#8e44ad" : this.baseSpec.color; ctx.lineWidth = this.recoil > 0 ? 4 : 2; ctx.strokeRect(cellLeft + 1, cellTop + 1, CELL_W - 2, CELL_H - 2);
@@ -817,7 +891,7 @@
         this.x = x; this.y = y; this.target = target; this.tower = tower;
         this.speed = tower.type.includes("MAX") || tower.type.includes("LARGE") || tower.type.includes("LET") ? 25 : (tower.baseSpec.splash ? 8 : 12);
         this.hitSet = hitSet;
-        this.chainCount = tower.baseSpec.chain || 0;
+        this.chainCount = (tower.baseSpec.chain || 0) * chainMultiplier; 
       }
       
       update() {
@@ -855,7 +929,7 @@
 
         if (this.chainCount > 0) {
           let nextTarget = null;
-          let minDist = 150; 
+          let minDist = 150 * chainRangeMult; 
           
           for (let e of enemies) {
             if (!this.hitSet.has(e)) {
@@ -974,8 +1048,9 @@
         const t = towers[idx]; 
         const refund = Math.floor(t.totalSpent * refundRate); 
         budget += refund; 
+        if (refundRate >= 1.0) stat_mansour += (t.totalSpent * (refundRate - 0.7)); // 만수르 이득 누적
         towers.splice(idx, 1);
-        towers.forEach(tw => tw.updateStats()); // 🎯 맵 스탯 실시간 갱신
+        towers.forEach(tw => tw.updateStats()); 
         
         if(highQuality) { for(let i=0; i<10; i++) particles.push(new Particle(t.x, t.y, "#e74c3c", 4)); }
         floatingTexts.push(new FloatingText(t.x, t.y - 15, `판매 (+$${refund})`, "#e74c3c", true, 40));
@@ -1036,7 +1111,7 @@
         refundGold = Math.floor(refundGold); budget += refundGold;
         
         towers.push(new Tower(pos.col, pos.row, selectedTower)); Sound.synergy();
-        towers.forEach(t => t.updateStats()); // 🎯 설치 완료 후 오라 재계산
+        towers.forEach(t => t.updateStats()); 
         
         floatingTexts.push(new FloatingText(pos.col*CELL_W + HEADER_W + 20, pos.row*CELL_H + HEADER_H - 15, `+$${refundGold} 환불!`, "#f1c40f", true, 45));
         
@@ -1051,11 +1126,16 @@
         updateUI(); return;
       }
       
-      if (budget >= spec.cost) { 
-        budget -= spec.cost; 
+      const actualCost = Math.floor(spec.cost * baseCostMult);
+      if (budget >= actualCost) { 
+        if (baseCostMult < 1.0 && spec.type === 'base') stat_discount += (spec.cost - actualCost); // 할인액 누적
+        budget -= actualCost; 
         towers.push(new Tower(pos.col, pos.row, selectedTower)); 
-        towers.forEach(t => t.updateStats()); // 🎯 일반 타워 설치 시에도 재계산
+        towers.forEach(t => t.updateStats()); 
         updateUI(); 
+      } else {
+        Sound.error();
+        floatingTexts.push(new FloatingText(pos.col*CELL_W + HEADER_W + 20, pos.row*CELL_H + HEADER_H, "예산 부족!", "#e74c3c", true, 30));
       }
     });
 
@@ -1084,7 +1164,6 @@
       }
       
       document.getElementById("tm-sell").innerText = `판매 (+$${refund})`;
-      
       modal.style.display = "block";
     };
 
@@ -1111,7 +1190,7 @@
         
         const idx = towers.indexOf(clickedTowerObj);
         if (idx > -1) towers.splice(idx, 1);
-        towers.forEach(tw => tw.updateStats()); // 🎯 맵 스탯 실시간 갱신
+        towers.forEach(tw => tw.updateStats()); 
         
         if(highQuality) { for(let i=0; i<10; i++) particles.push(new Particle(clickedTowerObj.x, clickedTowerObj.y, "#e74c3c", 4)); }
         floatingTexts.push(new FloatingText(clickedTowerObj.x, clickedTowerObj.y - 15, `판매 (+$${refund})`, "#e74c3c", true, 40));
@@ -1142,26 +1221,32 @@
           enemies.push(new ErrorEnemy(currentTier, true)); 
         }
         
-        // 🎯 [추가됨] 티어 상승 시 사이드바 다시 렌더링하여 신규 상점 타워 해금!
+        let newlyUnlocked = [];
+        for (let key in TOWER_SPECS) {
+          if (TOWER_SPECS[key].type === 'base' && TOWER_SPECS[key].unlockTier === currentTier) {
+            newlyUnlocked.push(TOWER_SPECS[key].name);
+          }
+        }
+        if (newlyUnlocked.length > 0) {
+          floatingTexts.push(new FloatingText(880/2, 490/2 + 30, `🔓 신규 상점 타워 해금: ${newlyUnlocked.join(", ")}`, "#f1c40f", true, 90));
+          Sound.synergy(); 
+        }
+
         renderSidebarAndModals();
       }
 
-      // 스마트 조합 활성화 UI 로직
       const builtTowerTypes = towers.map(t => t.type); 
       
       document.querySelectorAll(".tower-btn").forEach(btn => {
-        if (btn.classList.contains("locked")) return; // 🎯 미해금 타워 무시
+        if (btn.classList.contains("locked")) return; 
         
         const type = btn.dataset.type;
         const spec = TOWER_SPECS[type];
         
         if (spec && spec.req) {
           const canCraft = spec.req.every(reqType => builtTowerTypes.includes(reqType));
-          if (canCraft) {
-            btn.classList.add("craftable");
-          } else {
-            btn.classList.remove("craftable");
-          }
+          if (canCraft) { btn.classList.add("craftable"); } 
+          else { btn.classList.remove("craftable"); }
         }
       });
     }
@@ -1207,8 +1292,18 @@
       budget = 300; gameTime = 0; frame = 0; screenShake = 0; currentTier = 1; currentDimName = "EXCEL";
       document.documentElement.style.setProperty('--bar-color', '#107c41');
       document.getElementById('win-title').innerText = "📊 Multiverse_Defense.xlsx - Ultimate Edition";
-      updateUI(); 
-      renderSidebarAndModals(); // 🎯 재시작 시 1티어로 돌아가므로 상점 잠금 초기화
+      
+      globalDmgMult = 1.0; globalCostMult = 1.0; globalRateMult = 1.0; globalRangeMult = 1.0; refundRate = 0.7;
+      executeThreshold = 0; deathExplosion = false; baseCostMult = 1.0; poisonSpread = false; critChance = 0;
+      bossHitGold = 0; chainMultiplier = 1; chainRangeMult = 1.0; synergyDmgMult = 1.0; MAX_ENEMIES = 300;
+      doubleCast = false; stunnedDmgMult = 1.0; cosmicRuin = false; giantSlayer = 0;
+      
+      activeAugments = []; // 통계 및 증강 완벽 초기화
+      stat_execute = 0; stat_explosion = 0; stat_discount = 0; stat_poisonSpread = 0;
+      stat_critDmg = 0; stat_gamble = 0; stat_bossGold = 0; stat_doubleCast = 0;
+      stat_freezeDmg = 0; stat_cosmicDmg = 0; stat_giantDmg = 0; stat_mansour = 0;
+
+      updateUI(); renderSidebarAndModals(); 
       gameState = 1; requestAnimationFrame(gameLoop);
     };
 
@@ -1239,8 +1334,15 @@
         enemies.push(new ErrorEnemy(currentTier, false));
         if (enemies.length >= MAX_ENEMIES) {
           gameState = 2; Sound.hit("MAX", true);
+          
+          if (currentTier > bestTier) {
+              bestTier = currentTier;
+              localStorage.setItem("md_best_tier", bestTier);
+              document.getElementById("best-tier-badge").innerText = bestTier;
+          }
+
           document.getElementById("go-title").innerText = currentDimName === "DEV" ? "BSOD: CRITICAL_PROCESS_DIED" : "#STACK_OVERFLOW!";
-          document.getElementById("final-score").innerText = `최종 티어: ${currentTier} (${currentDimName}) | 버틴 시간: ${Math.floor(gameTime/60)}초`;
+          document.getElementById("final-score").innerHTML = `최종 티어: ${currentTier} (${currentDimName}) | 버틴 시간: ${Math.floor(gameTime/60)}초<br><br><span style="color:#f1c40f">🏆 나의 최고 기록: 티어 ${bestTier}</span>`;
           document.getElementById("game-over-overlay").style.display = "flex";
           ctx.restore(); return;
         }
@@ -1250,6 +1352,30 @@
         enemies[i].update();
         if (enemies[i].hp <= 0) {
           budget += enemies[i].reward;
+          
+          if (deathExplosion && Math.random() < 0.3) {
+              if(highQuality) shockwaves.push(new Shockwave(enemies[i].x, enemies[i].y, 100, "#e74c3c"));
+              enemies.forEach(e => {
+                  if (e !== enemies[i] && Math.hypot(e.x - enemies[i].x, e.y - enemies[i].y) < 100) {
+                      e.takeDamage(100, true);
+                      stat_explosion += 100; // 폭발 딜 누적
+                  }
+              });
+              floatingTexts.push(new FloatingText(enemies[i].x, enemies[i].y - 20, "연쇄폭발!", "#e74c3c", true, 30));
+          }
+
+          if (poisonSpread && enemies[i].poisonTimer > 0) {
+              const spreadDmg = enemies[i].poisonDmg;
+              enemies.forEach(e => {
+                  if (e !== enemies[i] && Math.hypot(e.x - enemies[i].x, e.y - enemies[i].y) < 120) {
+                      if(e.poisonTimer <= 0) stat_poisonSpread++; // 신규 전염 횟수
+                      e.poisonTimer = 180; e.poisonDmg = spreadDmg;
+                  }
+              });
+              if(highQuality) shockwaves.push(new Shockwave(enemies[i].x, enemies[i].y, 120, "#2ecc71"));
+              floatingTexts.push(new FloatingText(enemies[i].x, enemies[i].y - 10, "독 전염!", "#2ecc71", false, 30));
+          }
+
           if (enemies[i].isBoss) { 
             addShake(15); Sound.hit("MAX"); 
             if(highQuality) for(let p=0; p<40; p++) particles.push(new Particle(enemies[i].x, enemies[i].y, "#ffeb3b", 6)); 
@@ -1259,6 +1385,19 @@
           enemies.splice(i, 1); continue;
         }
         enemies[i].draw();
+      }
+
+      if (cosmicRuin && frame % 300 === 0) {
+          const strikeCount = 3 + Math.floor(Math.random() * 3);
+          for(let i=0; i<strikeCount; i++) {
+              if (enemies.length === 0) break;
+              const target = enemies[Math.floor(Math.random() * enemies.length)];
+              target.takeDamage(500, true, 60);
+              stat_cosmicDmg += 500; // 궤도 폭격 딜 누적
+              if(highQuality) shockwaves.push(new Shockwave(target.x, target.y, 80, "#9b59b6"));
+              floatingTexts.push(new FloatingText(target.x, target.y - 40, "🚀궤도 폭격!", "#9b59b6", true, 40));
+              Sound.hit("MAX");
+          }
       }
 
       for (let tower of towers) { tower.update(); tower.draw(); }
@@ -1282,7 +1421,15 @@
       if (gameState === 1) requestAnimationFrame(gameLoop);
     }
     
-    window.onload = () => { renderSidebarAndModals(); drawExcelGrid(DIMENSIONS.EXCEL); };
+    window.onload = () => { 
+      document.getElementById("best-tier-badge").innerText = bestTier;
+      const qBtn = document.getElementById("quality-btn");
+      qBtn.innerText = highQuality ? "⚙️ 품질: 높음" : "⚙️ 품질: 낮음";
+      qBtn.style.background = highQuality ? "#16a085" : "#7f8c8d";
+      
+      renderSidebarAndModals(); 
+      drawExcelGrid(DIMENSIONS.EXCEL); 
+    };
     
   </script>
 </body>
