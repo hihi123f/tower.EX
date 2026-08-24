@@ -476,32 +476,60 @@
     
 
     class ErrorEnemy {
-      constructor(tier, isBoss = false) {
+      constructor(tier, isBoss = false, overrideType = null, startProgress = 0, track = null) {
         this.isBoss = isBoss; this.tier = tier;
         const dim = getDimObj(tier); const dimName = getDimName(tier); this.dimName = dimName;
-        const rand = Math.random(); this.type = isBoss ? "BOSS" : (rand < 0.2 ? "RUNNER" : (rand < 0.5 ? "TANK" : "NORMAL"));
+        
+        // 🎯 [추가됨] 몬스터 타입 다양화 (분열형, 힐러형, 순간가속형 확률 스폰)
+        const rand = Math.random(); 
+        if (overrideType) this.type = overrideType;
+        else if (isBoss) this.type = "BOSS";
+        else if (rand < 0.1) this.type = "SPLITTER";  // 10% 분열형
+        else if (rand < 0.2) this.type = "HEALER";    // 10% 힐러형
+        else if (rand < 0.3) this.type = "DASHER";    // 10% 순간가속형
+        else if (rand < 0.5) this.type = "RUNNER";
+        else if (rand < 0.75) this.type = "TANK";
+        else this.type = "NORMAL";
+
         this.baseSpeed = 1.3 + Math.min(2.5, tier * 0.1);
         const baseHp = 35 * Math.pow(1.3, tier - 1);
         this.maxShield = 0;
         
+        // 🎯 [추가됨] 차원별(엑셀, 한글, PPT) 특수 몬스터 이름 매핑
+        const tagSplit = dimName==="EXCEL" ? "#SPILL!" : (dimName==="HWP" ? "구역나누기" : (dimName==="PPT" ? "슬라이드복제" : "Fork()"));
+        const tagHeal  = dimName==="EXCEL" ? "#CIRCULAR!" : (dimName==="HWP" ? "자동저장" : (dimName==="PPT" ? "마스터적용" : "Safe_Mode"));
+        const tagDash  = dimName==="EXCEL" ? "#CALC!" : (dimName==="HWP" ? "강제종료" : (dimName==="PPT" ? "모핑효과" : "Mem_Leak"));
+
         if (this.type === "RUNNER") { this.tag = dim.mobs[0]; this.speed = this.baseSpeed * 1.6; this.maxHp = baseHp * 0.5; } 
         else if (this.type === "TANK") { this.tag = dim.mobs[1]; this.speed = this.baseSpeed * 0.7; this.maxHp = baseHp * 0.8; this.maxShield = baseHp * 1.5; } 
         else if (this.type === "BOSS") { this.tag = dim.boss; this.speed = 0.7; this.maxHp = baseHp * 20; this.maxShield = baseHp * 10; addShake(15); } 
+        else if (this.type === "SPLITTER") { this.tag = tagSplit; this.speed = this.baseSpeed * 0.8; this.maxHp = baseHp * 1.2; }
+        else if (this.type === "HEALER") { this.tag = tagHeal; this.speed = this.baseSpeed * 0.9; this.maxHp = baseHp * 0.9; }
+        else if (this.type === "DASHER") { this.tag = tagDash; this.speed = this.baseSpeed * 0.6; this.maxHp = baseHp * 0.7; }
         else { this.tag = dim.mobs[Math.floor(Math.random() * dim.mobs.length)]; this.speed = this.baseSpeed; this.maxHp = baseHp; }
         
         this.hp = this.maxHp; this.shield = this.maxShield; this.currentSpeed = this.speed;
-        this.reward = isBoss ? 500 : (this.type==="TANK" ? 15 : 10);
-        this.track = Math.random() > 0.5 ? pathOuterPx : pathInnerPx;
-        this.progress = 0; this.hitFlash = 0;
-        this.baseScale = isBoss ? (dimName==="PPT" ? 2.5 : 2.2) : (this.type === "TANK" ? 1.2 : (this.type==="RUNNER" ? 0.8 : 1));
+        this.reward = isBoss ? 500 : (this.type==="TANK" || this.type==="SPLITTER" ? 15 : 10);
+        
+        // 🎯 분열 시 부모의 트랙과 진행도를 그대로 이어받음
+        this.track = track || (Math.random() > 0.5 ? pathOuterPx : pathInnerPx);
+        this.progress = startProgress; 
+        
+        this.hitFlash = 0;
+        this.baseScale = isBoss ? (dimName==="PPT" ? 2.5 : 2.2) : (this.type === "TANK" ? 1.2 : (this.type==="RUNNER" ? 0.8 : (this.type==="SPLITTER" ? 1.1 : 1)));
+        if (overrideType === "NORMAL" && startProgress > 0) this.baseScale = 0.7; // 분열해서 나온 새끼 몬스터는 크기가 작음
+        
         this.scale = this.baseScale; this.stunTimer = 0; this.slowTimer = 0;
         this.isInvincible = false; this.invincTimer = 0;
 
-        // ☠️ [추가된 부분] 독 데미지 관련 변수
-        this.poisonTimer = 0;
-        this.poisonDmg = 0;
+        this.poisonTimer = 0; this.poisonDmg = 0;
+        this.shieldHitTimer = 0; 
+        
+        // 특수 스킬 타이머
+        this.skillTimer = 0;
+        this.hasSplit = false;
 
-        if (isBoss) {
+        if (isBoss && startProgress === 0) {
           Sound.dimShift();
           const warning = dimName==="DEV" ? "⚠️ FATAL BSOD ⚠️" : (dimName==="PPT" ? "⚠️ SLIDE MASTER ⚠️" : "⚠️ BOSS ⚠️");
           floatingTexts.push(new FloatingText(canvas.width/2, canvas.height/2, warning, "#ff0000", true, 60));
@@ -516,20 +544,54 @@
         this.y = this.track[seg].y + (this.track[nextSeg].y - this.track[seg].y) * t;
       }
       update() {
+        if (this.shieldHitTimer > 0) this.shieldHitTimer--;
         if (this.isBoss && this.dimName === "PPT") { this.invincTimer++; this.isInvincible = (this.invincTimer % 200 < 60); }
         
-        // ☠️ [추가된 부분] 독 데미지 적용 로직
+        if (this.shield > 0) {
+          this.stunTimer = 0; this.slowTimer = 0; this.currentSpeed = this.speed;
+        }
+
+        // 🎯 [추가됨] 힐러(자동저장) & 순간가속(강제종료/모핑효과) 스킬 발동 로직
+        if (this.stunTimer <= 0) {
+          this.skillTimer++;
+          if (this.type === "HEALER" && this.skillTimer >= 120) {
+            // 2초마다 주변 아군 15% 광역 힐
+            this.skillTimer = 0;
+            let healed = false;
+            enemies.forEach(e => {
+              if (e !== this && e.hp > 0 && e.hp < e.maxHp && Math.hypot(e.x - this.x, e.y - this.y) < 110) {
+                e.hp = Math.min(e.maxHp, e.hp + (e.maxHp * 0.15));
+                floatingTexts.push(new FloatingText(e.x, e.y - 15, "+HEAL", "#2ecc71", false, 30));
+                healed = true;
+              }
+            });
+            if (healed && highQuality) shockwaves.push(new Shockwave(this.x, this.y, 110, "#2ecc71"));
+          }
+          else if (this.type === "DASHER") {
+            // 주기적으로 0.5초 동안 속도 3.5배 가속
+            if (this.skillTimer === 150) {
+              this.currentSpeed = this.speed * 3.5;
+              floatingTexts.push(new FloatingText(this.x, this.y - 15, "DASH!", "#f39c12", true, 20));
+            } else if (this.skillTimer >= 180) {
+              this.currentSpeed = this.speed;
+              this.skillTimer = 0;
+            }
+          }
+        }
+
         if (this.poisonTimer > 0) {
           this.poisonTimer--;
-          this.hp -= this.poisonDmg; // 방어막 무시 직접 타격
-          if (frame % 30 === 0 && Math.random() > 0.3) {
-            floatingTexts.push(new FloatingText(this.x, this.y - 20, "독!", "#2ecc71", false, 30));
-          }
+          this.hp -= this.poisonDmg; 
+          if (frame % 30 === 0 && Math.random() > 0.3) floatingTexts.push(new FloatingText(this.x, this.y - 20, "독!", "#2ecc71", false, 30));
         }
 
         if (this.stunTimer > 0) { this.stunTimer--; this.hitFlash = Math.max(this.hitFlash, 1); } 
         else {
-          if (this.slowTimer > 0) { this.slowTimer--; if (this.slowTimer <= 0) this.currentSpeed = this.speed; }
+          // 슬로우에 걸렸어도 가속형이 발동 중이면 뚫고 달림!
+          if (this.slowTimer > 0) { 
+            this.slowTimer--; 
+            if (this.slowTimer <= 0) this.currentSpeed = (this.type === "DASHER" && this.skillTimer > 150) ? this.speed * 3.5 : this.speed; 
+          }
           this.progress = (this.progress + (this.currentSpeed / (this.isBoss?500:400))) % 4;
         }
         if (this.hitFlash > 0 && this.stunTimer <= 0) this.hitFlash--;
@@ -538,26 +600,43 @@
       }
       
       takeDamage(dmg, pierce = false, stunTime = 0, poisonSpec = null) {
-  if (this.isInvincible) { floatingTexts.push(new FloatingText(this.x, this.y - 20, "IMMUNE!", "#f1c40f", true)); return; }
-  
-  if (stunTime > 0) this.stunTimer = Math.max(this.stunTimer, stunTime);
-  if (poisonSpec) { this.poisonTimer = poisonSpec.time; this.poisonDmg = poisonSpec.dmg; }
+        if (this.isInvincible) { floatingTexts.push(new FloatingText(this.x, this.y - 20, "IMMUNE!", "#f1c40f", true)); return; }
+        
+        // 독 데미지는 쉴드 유무와 상관없이 부여
+        if (poisonSpec) { this.poisonTimer = poisonSpec.time; this.poisonDmg = poisonSpec.dmg; }
 
-  let actualDmg = dmg;
-  if (this.shield > 0 && !pierce) { 
-    
-    // 🛡️ [추가됨] 쉴드 타격 시 사운드 및 육각 파편 스파크 발생!
-    Sound.hitShield();
-    if(highQuality) { for(let i=0; i<4; i++) particles.push(new HexParticle(this.x, this.y, "#3498db", 5)); }
-    
-    if (actualDmg > this.shield) { actualDmg -= this.shield; this.shield = 0; this.hp -= actualDmg; } 
-    else { this.shield -= actualDmg; } 
-  } 
-  else { this.hp -= actualDmg; }
-  
-  this.hitFlash = this.stunTimer > 0 ? 1 : 3; this.scale = this.baseScale * 1.2;
-  if (Math.random() > 0.5) floatingTexts.push(new FloatingText(this.x, this.y - 15, Math.round(dmg), pierce ? "#f1c40f" : "#fff", pierce));
-}
+        let actualDmg = dmg;
+        if (this.shield > 0 && !pierce) { 
+          
+          // 🛡️ 쉴드 타격 시 사운드 및 쉴드 발광 타이머 작동!
+          Sound.hitShield();
+          this.shieldHitTimer = 15; // 15프레임 동안 프로토스 쉴드 이펙트 유지
+          if(highQuality) { for(let i=0; i<4; i++) particles.push(new HexParticle(this.x, this.y, "#00ffff", 5)); }
+          
+          if (actualDmg > this.shield) { actualDmg -= this.shield; this.shield = 0; this.hp -= actualDmg; } 
+          else { this.shield -= actualDmg; } 
+        } 
+        else { this.hp -= actualDmg; }
+        
+        // 🛡️ CC 면역 로직: 데미지를 다 받고 난 후, 쉴드가 깨졌을 때만 기절 적용!
+        if (this.shield <= 0) {
+          if (stunTime > 0) this.stunTimer = Math.max(this.stunTimer, stunTime);
+        }
+
+        // 🎯 [추가됨] 분열형(#SPILL! / 구역나누기 / 슬라이드복제) 사망 시 미니 몬스터 2마리로 쪼개짐
+        if (this.hp <= 0 && this.type === "SPLITTER" && !this.hasSplit) {
+          this.hasSplit = true;
+          const offset = 0.01; // 앞뒤로 약간 엇갈려서 스폰되도록 간격 조정
+          enemies.push(new ErrorEnemy(this.tier, false, "NORMAL", Math.max(0, this.progress - offset), this.track));
+          enemies.push(new ErrorEnemy(this.tier, false, "NORMAL", Math.max(0, this.progress + offset), this.track));
+          
+          floatingTexts.push(new FloatingText(this.x, this.y, "분열!", "#9b59b6", true, 40));
+          if(highQuality) shockwaves.push(new Shockwave(this.x, this.y, 45, "#9b59b6"));
+        }
+        
+        this.hitFlash = this.stunTimer > 0 ? 1 : 3; this.scale = this.baseScale * 1.2;
+        if (Math.random() > 0.5) floatingTexts.push(new FloatingText(this.x, this.y - 15, Math.round(dmg), pierce ? "#f1c40f" : "#fff", pierce));
+      }
       draw() {
         ctx.save(); ctx.translate(this.x, this.y);
         if (this.isBoss && this.dimName === "PPT") ctx.rotate(this.progress * Math.PI * 4);
@@ -584,6 +663,30 @@
         ctx.fillStyle = "#555"; ctx.fillRect(-18, -16, 36, 4); 
         ctx.fillStyle = "#e53935"; ctx.fillRect(-18, -14, 36 * Math.max(0, this.hp / this.maxHp), 2); 
         if (this.maxShield > 0) { ctx.fillStyle = "#3498db"; ctx.fillRect(-18, -16, 36 * Math.max(0, this.shield / this.maxShield), 2); }
+
+        // 🛡️ [추가됨] 프로토스 쉴드 발광 구체 이펙트
+        if (this.shieldHitTimer > 0) {
+          ctx.beginPath();
+          // 타격 시 미세하게 퍼져나가는 타원 형태
+          const rx = 28 + (15 - this.shieldHitTimer) * 0.4;
+          const ry = 16 + (15 - this.shieldHitTimer) * 0.4;
+          ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+
+          // 내부부터 바깥으로 번지는 입체적 광원
+          const grad = ctx.createRadialGradient(0, 0, rx * 0.5, 0, 0, rx);
+          grad.addColorStop(0, "rgba(52, 152, 219, 0)"); // 중앙은 투명하게
+          grad.addColorStop(0.8, `rgba(0, 255, 255, ${this.shieldHitTimer / 25})`);
+          grad.addColorStop(1, `rgba(0, 150, 255, ${this.shieldHitTimer / 15})`);
+          
+          ctx.fillStyle = grad;
+          ctx.fill();
+
+          // 쉴드 테두리 (스타크래프트 쉴드 느낌의 쨍한 시안색)
+          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = `rgba(150, 255, 255, ${this.shieldHitTimer / 15})`;
+          ctx.stroke();
+        }
+
         ctx.restore();
       }
     }
@@ -991,6 +1094,7 @@ if (this.chainCount > 0) {
     function updateUI() {
       const el = document.getElementById("enemy-count"); el.innerText = enemies.length;
       el.className = ""; if (enemies.length < 100) el.classList.add("traffic-green"); else if (enemies.length < 200) el.classList.add("traffic-yellow"); else el.classList.add("traffic-red");
+      
       const newTier = Math.floor(gameTime / 600) + 1;
       document.getElementById("budget").innerText = budget;
       document.getElementById("tier-badge").innerText = `📈 티어: ${newTier} (${getDimName(newTier)})`;
@@ -1005,28 +1109,30 @@ if (this.chainCount > 0) {
           Sound.dimShift();
           floatingTexts.push(new FloatingText(880/2, 490/2 - 50, `차원 붕괴! [${currentDimName}] 유니버스 진입`, dimObj.bar, true, 80));
         }
+
+        // 🎯 [추가됨] 스테이지형 보스: 티어가 15의 배수(15, 30, 45...)일 때 확정 스폰
+        if (currentTier % 15 === 0) {
+          enemies.push(new ErrorEnemy(currentTier, true)); // isBoss = true로 생성
+        }
       }
 
-      // 🎯 [여기 추가됨!] 스마트 조합 활성화 UI 로직
-      const builtTowerTypes = towers.map(t => t.type); // 필드에 건설된 타워들의 종류 목록
+      // 스마트 조합 활성화 UI 로직
+      const builtTowerTypes = towers.map(t => t.type); 
       
       document.querySelectorAll(".tower-btn").forEach(btn => {
         const type = btn.dataset.type;
         const spec = TOWER_SPECS[type];
         
-        // 에픽, 고대 등 조합 조건(req)이 있는 타워만 검사
         if (spec && spec.req) {
-          // req 배열에 있는 모든 타워가 builtTowerTypes 안에 포함되어 있는지 확인
           const canCraft = spec.req.every(reqType => builtTowerTypes.includes(reqType));
-          
           if (canCraft) {
-            btn.classList.add("craftable"); // 불 들어오기
+            btn.classList.add("craftable");
           } else {
-            btn.classList.remove("craftable"); // 불 끄기
+            btn.classList.remove("craftable");
           }
         }
       });
-}
+    }
 
     function togglePause() {
   const pauseBtn = document.getElementById("pause-btn");
@@ -1078,7 +1184,7 @@ let lastTimestamp = 0;
 function gameLoop(timestamp) {
       if (gameState !== 1) return; 
       
-      // 🚨 [추가된 부분] 모바일 120Hz 디스플레이 방어용 60FPS 강제 고정 로직
+      // 🚨 모바일 120Hz 디스플레이 방어용 60FPS 강제 고정 로직
       if (!timestamp) timestamp = performance.now();
       if (timestamp - lastTimestamp < 15) { 
         requestAnimationFrame(gameLoop);
@@ -1086,7 +1192,6 @@ function gameLoop(timestamp) {
       }
       lastTimestamp = timestamp;
 
-      // 아래부터는 기존 코드와 동일합니다
       frame++; gameTime++;
       ctx.save();
       if (screenShake > 0) { ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake); screenShake *= 0.85; if (screenShake < 0.5) screenShake = 0; }
@@ -1097,7 +1202,7 @@ function gameLoop(timestamp) {
       
       drawExcelGrid(dim);
 
-      if (frame % 3000 === 0 && currentTier > 1) { enemies.push(new ErrorEnemy(currentTier, true)); }
+      // 🎯 [수정됨] 기존 frame % 3000 기반 무작위 보스 스폰 코드 완전 삭제!
 
       const spawnInterval = Math.max(15, 60 - currentTier * 3);
       if (frame % spawnInterval === 0) {
@@ -1119,7 +1224,7 @@ function gameLoop(timestamp) {
             addShake(15); Sound.hit("MAX"); 
             if(highQuality) for(let p=0; p<40; p++) particles.push(new Particle(enemies[i].x, enemies[i].y, "#ffeb3b", 6)); 
             floatingTexts.push(new FloatingText(enemies[i].x, enemies[i].y - 30, "+BOSS REWARD", "#ffeb3b", true, 50)); 
-            showAugments(); 
+            showAugments(); // 🎯 보스 처치 시 증강 획득 로직 발동
           }
           enemies.splice(i, 1); continue;
         }
@@ -1131,10 +1236,8 @@ function gameLoop(timestamp) {
       for (let i = shockwaves.length - 1; i >= 0; i--) { if (shockwaves[i].update()) shockwaves.splice(i, 1); else shockwaves[i].draw(); }
       for (let i = particles.length - 1; i >= 0; i--) { if (particles[i].update()) particles.splice(i, 1); else particles[i].draw(); }
       for (let i = floatingTexts.length - 1; i >= 0; i--) { if (floatingTexts[i].update()) floatingTexts.splice(i, 1); else floatingTexts[i].draw(); }
-       // ⚡ [여기 추가됨!] 번개 이펙트 업데이트 및 그리기
       for (let i = lightnings.length - 1; i >= 0; i--) { if (lightnings[i].update()) lightnings.splice(i, 1); else lightnings[i].draw(); }
 
-      // 🎯 사거리 가이드라인 (마우스 오버 시)
       if (hoverCol >= 0 && hoverRow >= 0 && hoverCol < COLS && hoverRow < ROWS) {
         const existing = towers.find(t => t.col === hoverCol && t.row === hoverRow);
         const specRange = existing ? existing.range : TOWER_SPECS[selectedTower].range;
