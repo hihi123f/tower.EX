@@ -133,7 +133,7 @@
 
     <div id="toolbar">
       <div class="stat-badge">🚦 트래픽: <span id="enemy-count" class="traffic-green">0</span> / 300</div>
-      <div class="stat-badge">💰 예산: $<span id="budget">300</span></div>
+      <div class="stat-badge">💰 예산: $<span id="budget">100</span></div>
       <div class="stat-badge" id="tier-badge">📈 티어: 1 (EXCEL)</div>
       
       <!-- 🎯 로컬스토리지 최고 기록 뱃지 -->
@@ -276,11 +276,15 @@
       });
     }
 
-    // 🎯 증강 통계용 전역 변수
+    // 🎯 증강 통계용 전역 변수 및 신규 증강 변수
     let activeAugments = [];
     let stat_execute = 0; let stat_explosion = 0; let stat_discount = 0; let stat_poisonSpread = 0;
     let stat_critDmg = 0; let stat_gamble = 0; let stat_bossGold = 0; let stat_doubleCast = 0;
     let stat_freezeDmg = 0; let stat_cosmicDmg = 0; let stat_giantDmg = 0; let stat_mansour = 0;
+    
+    // 신규 증강 효과 변수
+    let sniperBuff = false; let globalSplashMult = 1.0; let globalPierce = false; 
+    let interestRate = 0; let stat_interest = 0;
 
     // 🎯 증강 통계 렌더링 함수
     function renderAugmentList() {
@@ -306,6 +310,15 @@
         else if (aug.name === "우주적 파멸") statText = `궤도 폭격 딜: <b>${Math.floor(stat_cosmicDmg).toLocaleString()}</b>`;
         else if (aug.name === "만수르의 축복") statText = `지급/환불 이득: <b>$${Math.floor(stat_mansour).toLocaleString()}</b>`;
         else if (aug.name === "거인 학살자") statText = `체력 비례 추가 딜: <b>${Math.floor(stat_giantDmg).toLocaleString()}</b>`;
+        
+        // 신규 증강 통계
+        else if (aug.name === "복리의 마법") statText = `누적 이자 수익: <b>$${Math.floor(stat_interest).toLocaleString()}</b>`;
+        else if (aug.name === "저격수의 표식") statText = `단일 타워 데미지 2배 적용 중`;
+        else if (aug.name === "광역 폭파") statText = `폭발 범위 50% 증가 적용 중`;
+        else if (aug.name === "철갑탄") statText = `모든 타워 쉴드 100% 관통 중`;
+        else if (aug.name === "매의 눈") statText = `전체 사거리 40% 증가 적용 중`;
+        else if (aug.name === "시간 가속") statText = `전체 공격 속도 2배 적용 중`;
+        else if (aug.name === "가성비 강화") statText = `업그레이드 비용 30% 감소 적용 중`;
 
         const color = aug.tier === "Silver" ? "#bdc3c7" : (aug.tier === "Gold" ? "#f1c40f" : "#a29bfe");
         html += `<div class="modal-item">
@@ -333,7 +346,7 @@
     let rerolls = 2; 
     let globalDamageStats = {};
 
-    let gameState = 0; let budget = 300; let selectedTower = "SUM";
+    let gameState = 0; let budget = 100; let selectedTower = "SUM";
     let gameTime = 0; let frame = 0; let screenShake = 0; let currentTier = 1; let currentDimName = "EXCEL"; let bsodFlash = 0;
 
     let towers = []; let enemies = []; let projectiles = []; let particles = []; let floatingTexts = []; let shockwaves = []; let lightnings = [];
@@ -369,37 +382,40 @@
 
     const TOWER_SPECS = {
       // 🟩 1. 일반 타워 (8종)
-      SUM: { type:"base", cost: 40, range: 100, rate: 24, dmg: 20, color: "#107c41", name: "SUM", desc:"가장 기본적인 단일 공격", unlockTier: 1 },
-      IFERROR: { type:"base", cost: 60, range: 90, rate: 5, dmg: 5, color: "#d83b01", name: "IFERR", isBeam: true, desc:"적의 이동속도를 늦춤", unlockTier: 1 },
-      MIN: { type:"base", cost: 70, range: 90, rate: 65, dmg: 35, color: "#3498db", name: "MIN", stun: 12, desc:"적을 짧게 얼림(경직)", unlockTier: 1 },
-      VLOOKUP: { type:"base", cost: 90, range: 130, rate: 75, dmg: 60, color: "#0078d4", name: "VLOOK", splash: 75, desc:"주변 적 광역(Splash) 타격", unlockTier: 3 },
-      AVERAGE: { type:"base", cost: 100, range: 110, rate: 55, dmg: 20, color: "#9b59b6", name: "AVG", multi: 3, desc:"3명의 적을 동시 타격", unlockTier: 5 },
-      RATE: { type:"base", cost: 80, range: 105, rate: 45, dmg: 15, color: "#2ecc71", name: "RATE", poisonSpec: { dmg: 1.5, time: 420 }, desc:"적에게 7초간 서서히 피를 말리는 맹독 부여", unlockTier: 8 },
-      POWER: { type:"base", cost: 100, range: 100, rate: 60, dmg: 40, color: "#ffd700", name: "POWER", chain: 3, desc:"적중 시 3명의 적에게 연쇄 번개", unlockTier: 11 },
-      MAX: { type:"base", cost: 130, range: 220, rate: 110, dmg: 200, color: "#8e44ad", name: "MAX", desc:"강력한 장거리 저격", unlockTier: 14 },
+      SUM: { type:"base", cost: 40, range: 100, rate: 24, dmg: 10, color: "#107c41", name: "SUM", desc:"가장 기본적인 단일 공격", unlockTier: 1 },
+      IFERROR: { type:"base", cost: 60, range: 90, rate: 5, dmg: 3, color: "#d83b01", name: "IFERR", isBeam: true, desc:"적의 이동속도를 늦춤", unlockTier: 1 },
+      MIN: { type:"base", cost: 70, range: 90, rate: 65, dmg: 17, color: "#3498db", name: "MIN", stun: 12, desc:"적을 짧게 얼림(경직)", unlockTier: 1 },
+      VLOOKUP: { type:"base", cost: 90, range: 130, rate: 75, dmg: 30, color: "#0078d4", name: "VLOOK", splash: 75, desc:"주변 적 광역(Splash) 타격", unlockTier: 3 },
+      AVERAGE: { type:"base", cost: 100, range: 110, rate: 55, dmg: 10, color: "#9b59b6", name: "AVG", multi: 3, desc:"3명의 적을 동시 타격", unlockTier: 5 },
+      // 🎯 독 깡딜 절반 너프, 도트딜 대폭 상향
+      RATE: { type:"base", cost: 80, range: 105, rate: 45, dmg: 2, color: "#2ecc71", name: "RATE", poisonSpec: { dmg: 12.0, time: 420 }, desc:"적에게 7초간 서서히 피를 말리는 맹독 부여", unlockTier: 8 },
+      POWER: { type:"base", cost: 100, range: 100, rate: 60, dmg: 20, color: "#ffd700", name: "POWER", chain: 3, desc:"적중 시 3명의 적에게 연쇄 번개", unlockTier: 11 },
+      MAX: { type:"base", cost: 130, range: 220, rate: 110, dmg: 100, color: "#8e44ad", name: "MAX", desc:"강력한 장거리 저격", unlockTier: 14 },
       
       // 🟦 2. 레어 타워 (8종) - [일반 + 일반] 조합
-      SUMIF: { type:"rare", req: ["SUM", "IFERROR"], range: 130, rate: 14, dmg: 150, color: "#e67e22", name: "SUMIF", pierce: true, desc:"[관통] 방어 쉴드 무시 직접 타격" },
-      MATCH: { type:"rare", req: ["MIN", "VLOOKUP"], range: 140, rate: 50, dmg: 100, color: "#2980b9", name: "MATCH", splash: 90, stun: 15, desc:"[폭발+기절] 얼어붙는 범위 폭발" },
+      SUMIF: { type:"rare", req: ["SUM", "IFERROR"], range: 130, rate: 14, dmg: 75, color: "#e67e22", name: "SUMIF", pierce: true, desc:"[관통] 방어 쉴드 무시 직접 타격" },
+      MATCH: { type:"rare", req: ["MIN", "VLOOKUP"], range: 140, rate: 50, dmg: 50, color: "#2980b9", name: "MATCH", splash: 90, stun: 15, desc:"[폭발+기절] 얼어붙는 범위 폭발" },
       PIVOT: { type:"rare", req: ["AVERAGE", "RATE"], range: 170, rate: 0, dmg: 0, color: "#e056fd", name: "PIVOT", aura: true, desc:"[오라] 인접 타워 공격력 및 사거리 버프" },
-      COUNTIFS: { type:"rare", req: ["POWER", "MAX"], range: 180, rate: 4, dmg: 50, color: "#1abc9c", name: "CNTIFS", desc:"[단일] 초고속 연사 기관총" },
-      SUBTOTAL: { type:"rare", req: ["SUM", "VLOOKUP"], range: 130, rate: 18, dmg: 80, color: "#d35400", name: "SUBTOT", splash: 65, desc:"[폭발] 빠른 속도의 광역 폭격기" },
-      SMALL: { type:"rare", req: ["MIN", "RATE"], range: 130, rate: 12, dmg: 50, color: "#fdcb6e", name: "SMALL", stun: 10, poisonSpec: { dmg: 2.0, time: 200 }, desc:"[기절+맹독] 얼음 독가스 방출" },
-      PRODUCT: { type:"rare", req: ["AVERAGE", "POWER"], range: 130, rate: 25, dmg: 90, color: "#1e90ff", name: "PROD", chain: 5, desc:"[번개] 고속 5연쇄 번개 방출" },
-      EXACT: { type:"rare", req: ["IFERROR", "MAX"], range: 260, rate: 3, dmg: 120, color: "#2c3e50", name: "EXACT", isBeam: true, desc:"[단일+둔화] 초장거리 저격 슬로우 빔" },
+      COUNTIFS: { type:"rare", req: ["POWER", "MAX"], range: 180, rate: 4, dmg: 25, color: "#1abc9c", name: "CNTIFS", desc:"[단일] 초고속 연사 기관총" },
+      SUBTOTAL: { type:"rare", req: ["SUM", "VLOOKUP"], range: 130, rate: 18, dmg: 40, color: "#d35400", name: "SUBTOT", splash: 65, desc:"[폭발] 빠른 속도의 광역 폭격기" },
+      // 🎯 독 깡딜 절반 너프, 도트딜 대폭 상향
+      SMALL: { type:"rare", req: ["MIN", "RATE"], range: 130, rate: 12, dmg: 7, color: "#fdcb6e", name: "SMALL", stun: 10, poisonSpec: { dmg: 25.0, time: 200 }, desc:"[기절+맹독] 얼음 독가스 방출" },
+      PRODUCT: { type:"rare", req: ["AVERAGE", "POWER"], range: 130, rate: 25, dmg: 45, color: "#1e90ff", name: "PROD", chain: 5, desc:"[번개] 고속 5연쇄 번개 방출" },
+      EXACT: { type:"rare", req: ["IFERROR", "MAX"], range: 260, rate: 3, dmg: 60, color: "#2c3e50", name: "EXACT", isBeam: true, desc:"[단일+둔화] 초장거리 저격 슬로우 빔" },
 
       // 🟪 3. 에픽 타워 (4종) - [레어 + 레어] 조합
-      INDEXMATCH: { type:"epic", req: ["SUMIF", "MATCH"], range: 200, rate: 50, dmg: 400, color: "#f1c40f", name: "IDXMAT", splash: 150, stun: 20, desc:"[대폭발+기절] 엄청난 범위의 광역 빙결 폭발" },
-      XLOOKUP: { type:"epic", req: ["PIVOT", "COUNTIFS"], range: 220, rate: 4, dmg: 180, color: "#e74c3c", name: "XLOOK", pierce: true, desc:"[단일+관통] 쉴드를 찢어버리는 플라즈마 연사" },
-      FILTER: { type:"epic", req: ["SUBTOTAL", "PRODUCT"], range: 280, rate: 10, dmg: 350, color: "#111111", name: "FILTER", splash: 80, chain: 10, desc:"[광역 번개] 10연쇄 초고압 폭발 번개" },
-      XMATCH: { type:"epic", req: ["SMALL", "EXACT"], range: 240, rate: 3, dmg: 150, color: "#c0392b", name: "XMAT", multi: 5, isBeam: true, stun: 12, desc:"[다중+마비] 5갈래 초장거리 마비 광선" },
+      INDEXMATCH: { type:"epic", req: ["SUMIF", "MATCH"], range: 200, rate: 50, dmg: 200, color: "#f1c40f", name: "IDXMAT", splash: 150, stun: 20, desc:"[대폭발+기절] 엄청난 범위의 광역 빙결 폭발" },
+      XLOOKUP: { type:"epic", req: ["PIVOT", "COUNTIFS"], range: 220, rate: 4, dmg: 90, color: "#e74c3c", name: "XLOOK", pierce: true, desc:"[단일+관통] 쉴드를 찢어버리는 플라즈마 연사" },
+      // 🎯 에픽 번개(FILTER): 스플래시 속성 제거! (splash 삭제됨), 검정색 변경
+      FILTER: { type:"epic", req: ["SUBTOTAL", "PRODUCT"], range: 280, rate: 10, dmg: 175, color: "#111111", name: "FILTER", chain: 10, desc:"[연쇄 번개] 10연쇄 초고압 폭발 번개" },
+      XMATCH: { type:"epic", req: ["SMALL", "EXACT"], range: 240, rate: 3, dmg: 75, color: "#c0392b", name: "XMAT", multi: 5, isBeam: true, stun: 12, desc:"[다중+마비] 5갈래 초장거리 마비 광선" },
 
       // 🟥 4. 전설 타워 (2종) - [에픽 + 에픽] 조합
-      LET: { type:"legend", req: ["INDEXMATCH", "XLOOKUP"], range: 300, rate: 25, dmg: 2500, color: "#f39c12", name: "LET", splash: 80, multi: 5, pierce: true, desc:"[전설] 5인 동시 타격 궤도 폭격 (관통+스플래시)" },
-      RANDARRAY: { type:"legend", req: ["FILTER", "XMATCH"], range: 300, rate: 4, dmg: 600, color: "#e84393", name: "RAND", multi: 10, isBeam: true, aura: true, stun: 15, desc:"[전설] 초광역 버프 및 10갈래 파멸의 광선" },
+      LET: { type:"legend", req: ["INDEXMATCH", "XLOOKUP"], range: 300, rate: 25, dmg: 1250, color: "#f39c12", name: "LET", splash: 80, multi: 5, pierce: true, desc:"[전설] 5인 동시 타격 궤도 폭격 (관통+스플래시)" },
+      RANDARRAY: { type:"legend", req: ["FILTER", "XMATCH"], range: 300, rate: 4, dmg: 300, color: "#e84393", name: "RAND", multi: 10, isBeam: true, aura: true, stun: 15, desc:"[전설] 초광역 버프 및 10갈래 파멸의 광선" },
 
       // ⬛ 5. 히든 타워 (1종) - [레어 + 레어 + 레어] 비밀 조합
-      LAMBDA: { type:"hidden", req: ["COUNTIFS", "SUBTOTAL", "PIVOT"], range: 350, rate: 2, dmg: 999, color: "#000", name: "LAMBDA", splash: 120, pierce: true, desc:"[히든] 차원을 붕괴시키는 절대 무기" }
+      LAMBDA: { type:"hidden", req: ["COUNTIFS", "SUBTOTAL", "PIVOT"], range: 350, rate: 2, dmg: 500, color: "#000", name: "LAMBDA", splash: 120, pierce: true, desc:"[히든] 차원을 붕괴시키는 절대 무기" }
     };
 
     function renderSidebarAndModals() {
@@ -531,18 +547,28 @@
       { tier: "Silver", name: "알뜰 살뜰", desc: "기본 타워(1티어) 설치 비용 50% 할인", effect: () => { baseCostMult = 0.5; towers.forEach(t=>t.updateStats()); } },
       { tier: "Silver", name: "맹독 확산", desc: "독에 걸린 적 사망 시 주변 적에게 맹독 전염", effect: () => { poisonSpread = true; } },
       { tier: "Silver", name: "치명적인 일격", desc: "모든 공격 시 20% 확률로 2배의 치명타 피해", effect: () => { critChance = 0.2; } },
+      // 🎯 신규 실버 증강
+      { tier: "Silver", name: "매의 눈", desc: "모든 타워의 사거리가 40% 증가합니다.", effect: () => { globalRangeMult += 0.4; towers.forEach(t=>t.updateStats()); } },
+      { tier: "Silver", name: "가성비 강화", desc: "모든 타워의 업그레이드 비용이 30% 감소합니다.", effect: () => { globalCostMult *= 0.7; towers.forEach(t=>t.updateStats()); } },
       
       { tier: "Gold", name: "도박 중독", desc: "즉시 $1,000 ~ $4,000 랜덤 획득", effect: () => { const g = Math.floor(Math.random()*3001)+1000; budget+=g; stat_gamble+=g; floatingTexts.push(new FloatingText(880/2, 490/2+40, `+$${g} 잭팟!`, "#f1c40f", true, 60)); } },
       { tier: "Gold", name: "초전도 과부하", desc: "연쇄 번개(Chain) 튕기는 횟수 2배 및 사거리 대폭 증가", effect: () => { chainMultiplier = 2; chainRangeMult = 2.0; } },
       { tier: "Gold", name: "유리 대포", desc: "모든 타워 공격력 100% 증가, 단 트래픽 최대 수용량 150으로 반토막", effect: () => { globalDmgMult *= 2.0; MAX_ENEMIES = 150; towers.forEach(t=>t.updateStats()); } },
       { tier: "Gold", name: "황금빛 갈취", desc: "보스 타격 시마다 $10 획득 (보스가 돈줄로 변함)", effect: () => { bossHitGold = 10; } },
-      { tier: "Gold", name: "시너지 마스터", desc: "조합 타워(에픽/고대/히든) 기본 공격력 50% 폭증", effect: () => { synergyDmgMult = 1.5; towers.forEach(t=>t.updateStats()); } },
+      { tier: "Gold", name: "시너지 마스터", desc: "조합 타워(에픽/전설/히든) 기본 공격력 50% 폭증", effect: () => { synergyDmgMult = 1.5; towers.forEach(t=>t.updateStats()); } },
+      // 🎯 신규 골드 증강
+      { tier: "Gold", name: "저격수의 표식", desc: "[단일 특화] 광역/다중/연쇄 공격이 없는 순수 단일 타워의 데미지가 2배로 증가합니다.", effect: () => { sniperBuff = true; towers.forEach(t=>t.updateStats()); } },
+      { tier: "Gold", name: "광역 폭파", desc: "[광역 특화] 스플래시(Splash) 타워의 폭발 범위가 50% 증가합니다.", effect: () => { globalSplashMult = 1.5; } },
+      { tier: "Gold", name: "복리의 마법", desc: "보스를 처치할 때마다 현재 남은 보유 예산의 10%를 이자로 획득합니다.", effect: () => { interestRate = 0.1; } },
       
       { tier: "Prismatic", name: "요술사의 장갑", desc: "[더블 캐스트] 모든 투사체 타워가 100% 확률로 2연속 발사", effect: () => { doubleCast = true; } },
       { tier: "Prismatic", name: "영구 동토", desc: "기절/경직 상태인 적이 받는 모든 피해량 2배 증폭", effect: () => { stunnedDmgMult = 2.0; } },
       { tier: "Prismatic", name: "우주적 파멸", desc: "5초마다 맵 전체에 무작위 궤도 폭격 (광역 피해+기절)", effect: () => { cosmicRuin = true; } },
       { tier: "Prismatic", name: "만수르의 축복", desc: "즉시 $10,000 획득 + 타워 판매 시 100% 전액 환불", effect: () => { budget += 10000; stat_mansour += 10000; refundRate = 1.0; } },
-      { tier: "Prismatic", name: "거인 학살자", desc: "모든 공격에 적의 현재 체력 5% 비례 고정 피해 추가", effect: () => { giantSlayer = 0.05; } }
+      { tier: "Prismatic", name: "거인 학살자", desc: "모든 공격에 적의 현재 체력 5% 비례 고정 피해 추가", effect: () => { giantSlayer = 0.05; } },
+      // 🎯 신규 무지개 증강
+      { tier: "Prismatic", name: "철갑탄", desc: "모든 타워의 공격이 적의 방어 쉴드를 100% 무시하고 본체에 직접 피해를 줍니다.", effect: () => { globalPierce = true; } },
+      { tier: "Prismatic", name: "시간 가속", desc: "모든 타워의 공격 속도가 2배 빨라집니다 (쿨다운 50% 감소).", effect: () => { globalRateMult *= 0.5; towers.forEach(t=>t.updateStats()); } }
     ];
 
     function showAugments() {
@@ -624,8 +650,8 @@
         const tagDash  = dimName==="EXCEL" ? "#CALC!" : (dimName==="HWP" ? "강제종료" : (dimName==="PPT" ? "모핑효과" : "Mem_Leak"));
 
         if (this.type === "RUNNER") { this.tag = dim.mobs[0]; this.speed = this.baseSpeed * 1.6; this.maxHp = baseHp * 0.5; } 
-        else if (this.type === "TANK") { this.tag = dim.mobs[1]; this.speed = this.baseSpeed * 0.7; this.maxHp = baseHp * 0.8; this.maxShield = baseHp * 1.5; } 
-        else if (this.type === "BOSS") { this.tag = dim.boss; this.speed = 0.7; this.maxHp = baseHp * 20; this.maxShield = baseHp * 10; addShake(5); } 
+        else if (this.type === "TANK") { this.tag = dim.mobs[1]; this.speed = this.baseSpeed * 0.7; this.maxHp = baseHp * 0.8; this.maxShield = baseHp * 5.0; } // 🛡️ 쉴드량 대폭 증가!
+        else if (this.type === "BOSS") { this.tag = dim.boss; this.speed = 0.7; this.maxHp = baseHp * 20; this.maxShield = baseHp * 30; addShake(5); } // 🛡️ 보스 쉴드도 대폭 증가!
         else if (this.type === "SPLITTER") { this.tag = tagSplit; this.speed = this.baseSpeed * 0.8; this.maxHp = baseHp * 1.2; }
         else if (this.type === "HEALER") { this.tag = tagHeal; this.speed = this.baseSpeed * 0.9; this.maxHp = baseHp * 0.9; }
         else if (this.type === "DASHER") { this.tag = tagDash; this.speed = this.baseSpeed * 0.6; this.maxHp = baseHp * 0.7; }
@@ -701,7 +727,18 @@
 
         if (this.poisonTimer > 0) {
           this.poisonTimer--;
-          this.hp -= this.poisonDmg; 
+          
+          // 🎯 독 데미지: 쉴드가 있으면 쉴드부터 깎음
+          if (this.shield > 0) {
+              this.shield -= this.poisonDmg;
+              if (this.shield < 0) {
+                  this.hp += this.shield; // 남은 데미지(초과분)를 체력에 적용
+                  this.shield = 0;
+              }
+          } else {
+              this.hp -= this.poisonDmg; 
+          }
+
           if (frame % 45 === 0) {
             floatingTexts.push(new FloatingText(this.x + (Math.random() - 0.5) * 15, this.y - 20, "🫧독", "#2ecc71", false, 35));
           }
@@ -861,12 +898,28 @@
         
         let finalDmg = (this.baseSpec.dmg * Math.pow(1.45, this.level - 1)) * globalDmgMult * auraDmgMult;
         if (this.isSynergy) finalDmg *= synergyDmgMult;
+        
+        // 🎯 신규 증강: 단일 공격 타워만 데미지 2배! (저격수의 표식)
+        if (sniperBuff && !this.baseSpec.splash && !this.baseSpec.chain && !this.baseSpec.multi && !this.baseSpec.aura) {
+            finalDmg *= 2.0;
+        }
+        
         this.dmg = finalDmg;
+        
+        // 🎯 [추가된 부분] 독 데미지(DoT)도 업그레이드/증강에 비례해서 증가!
+        if (this.baseSpec.poisonSpec) {
+            let pDmg = (this.baseSpec.poisonSpec.dmg * Math.pow(1.45, this.level - 1)) * globalDmgMult * auraDmgMult;
+            if (this.isSynergy) pDmg *= synergyDmgMult;
+            this.currentPoisonSpec = { time: this.baseSpec.poisonSpec.time, dmg: pDmg };
+        } else {
+            this.currentPoisonSpec = null;
+        }
         
         // 🎯 [너프됨] 업그레이드 비용 1.5배 증가
         const baseCost = this.isSynergy ? (this.baseSpec.req.length > 2 ? 300 : 150) : (this.baseSpec.cost * baseCostMult);
         this.upgradeCost = Math.floor((baseCost * Math.pow(1.2, this.level) * 1.5) * globalCostMult);
         
+        // 👉 [복구된 부분] 사거리, 공격속도, 디스플레이 이름 계산
         this.range = (this.baseSpec.range * (1 + (this.level - 1) * 0.01)) * globalRangeMult * auraRangeMult; 
         this.rate = Math.max(2, Math.round((this.baseSpec.rate - (this.level - 1) * 0.4) * globalRateMult));
         
@@ -912,7 +965,8 @@
           this.laserTargets = targets;
           if (this.cooldown <= 0) {
             targets.forEach(t => {
-              const finalDmg = t.takeDamage(this.dmg, this.baseSpec.pierce, this.baseSpec.stun || 0); 
+              // 🎯 globalPierce (철갑탄 증강) 광선/빔 타워에 적용
+              const finalDmg = t.takeDamage(this.dmg, this.baseSpec.pierce || globalPierce, this.baseSpec.stun || 0); 
               this.totalDamageDealt += finalDmg; 
               globalDamageStats[this.baseSpec.name] = (globalDamageStats[this.baseSpec.name] || 0) + finalDmg; 
               
@@ -963,11 +1017,12 @@
     }
 
     class Projectile {
-      constructor(x, y, target, tower, hitSet = new Set()) {
+      constructor(x, y, target, tower, hitSet = new Set(), chainDmgMult = 1.0) {
         this.x = x; this.y = y; this.target = target; this.tower = tower;
         this.speed = tower.type.includes("MAX") || tower.type.includes("LARGE") || tower.type.includes("LET") ? 25 : (tower.baseSpec.splash ? 8 : 12);
         this.hitSet = hitSet;
         this.chainCount = (tower.baseSpec.chain || 0) * chainMultiplier; 
+        this.chainDmgMult = chainDmgMult; // 🎯 연쇄 번개 데미지 배율 (기본 1.0)
       }
       
       update() {
@@ -984,14 +1039,17 @@
 
         if (this.tower.baseSpec.splash) {
           addShake(0.5 + Math.min(1.5, this.tower.level * 0.2)); Sound.hit("VLOOKUP");
-          const splashRange = this.tower.baseSpec.splash * (1 + (this.tower.level - 1) * 0.1);
+          // 🎯 광역 폭파 증강(globalSplashMult) 적용!
+          const splashRange = this.tower.baseSpec.splash * (1 + (this.tower.level - 1) * 0.1) * globalSplashMult;
           if(highQuality) shockwaves.push(new Shockwave(this.x, this.y, splashRange, this.tower.baseSpec.color));
           
           enemies.forEach(e => { 
             if (Math.hypot(e.x - this.x, e.y - this.y) <= splashRange) { 
               const falloff = 1 - (Math.hypot(e.x - this.x, e.y - this.y) / splashRange) * 0.3; 
-              const actualDmg = this.tower.dmg * falloff;
-              const finalDmg = e.takeDamage(actualDmg, this.tower.baseSpec.pierce, this.tower.baseSpec.stun || 0, this.tower.baseSpec.poisonSpec); 
+              const actualDmg = this.tower.dmg * falloff * this.chainDmgMult;
+              
+              // 🎯 철갑탄 관통 적용
+              const finalDmg = e.takeDamage(actualDmg, this.tower.baseSpec.pierce || globalPierce, this.tower.baseSpec.stun || 0, this.tower.currentPoisonSpec); 
               this.tower.totalDamageDealt += finalDmg;
               globalDamageStats[this.tower.baseSpec.name] = (globalDamageStats[this.tower.baseSpec.name] || 0) + finalDmg; 
             } 
@@ -999,7 +1057,10 @@
           if(highQuality) for (let i = 0; i < 4; i++) particles.push(new Particle(this.x, this.y, this.tower.baseSpec.color, 4));
         } else {
           Sound.hit(this.tower.type, this.target.isBoss); 
-          const finalDmg = this.target.takeDamage(this.tower.dmg, this.tower.baseSpec.pierce, this.tower.baseSpec.stun || 0, this.tower.baseSpec.poisonSpec);
+          const actualDmg = this.tower.dmg * this.chainDmgMult;
+          
+          // 🎯 철갑탄 관통 적용
+          const finalDmg = this.target.takeDamage(actualDmg, this.tower.baseSpec.pierce || globalPierce, this.tower.baseSpec.stun || 0, this.tower.currentPoisonSpec);
           this.tower.totalDamageDealt += finalDmg; 
           globalDamageStats[this.tower.baseSpec.name] = (globalDamageStats[this.tower.baseSpec.name] || 0) + finalDmg; 
           
@@ -1019,7 +1080,11 @@
           
           if (nextTarget) {
             if(highQuality) lightnings.push(new LightningEffect(this.target.x, this.target.y, nextTarget.x, nextTarget.y, this.tower.baseSpec.color));
-            let nextProj = new Projectile(this.target.x, this.target.y, nextTarget, this.tower, this.hitSet);
+            
+            // 🎯 번개 뎀감 로직 패치! (최소 본래 데미지의 30%는 보장하도록 Math.max 적용)
+            const nextDmgMult = Math.max(0.3, this.chainDmgMult * 0.95);
+            
+            let nextProj = new Projectile(this.target.x, this.target.y, nextTarget, this.tower, this.hitSet, nextDmgMult);
             nextProj.chainCount = this.chainCount - 1; 
             nextProj.speed = this.speed * 3.5; 
             projectiles.push(nextProj);
@@ -1465,6 +1530,15 @@
             addShake(5); Sound.hit("MAX"); 
             if(highQuality) for(let p=0; p<40; p++) particles.push(new Particle(enemies[i].x, enemies[i].y, "#ffeb3b", 6)); 
             floatingTexts.push(new FloatingText(enemies[i].x, enemies[i].y - 30, "+BOSS REWARD", "#ffeb3b", true, 50)); 
+            
+            // 🎯 신규 증강: 복리의 마법 (보스 처치 시 보유 골드의 10% 지급)
+            if (interestRate > 0) {
+                const interest = Math.floor(budget * interestRate);
+                budget += interest;
+                stat_interest += interest;
+                floatingTexts.push(new FloatingText(enemies[i].x, enemies[i].y - 50, `+$${interest} 복리 이자!`, "#f1c40f", true, 60));
+            }
+            
             showAugments(); 
           }
           enemies.splice(i, 1); continue;
