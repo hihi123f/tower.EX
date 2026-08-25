@@ -375,7 +375,7 @@
       VLOOKUP: { type:"base", cost: 90, range: 130, rate: 75, dmg: 60, color: "#0078d4", name: "VLOOK", splash: 75, desc:"주변 적 광역(Splash) 타격", unlockTier: 3 },
       AVERAGE: { type:"base", cost: 100, range: 110, rate: 55, dmg: 20, color: "#9b59b6", name: "AVG", multi: 3, desc:"3명의 적을 동시 타격", unlockTier: 5 },
       RATE: { type:"base", cost: 80, range: 105, rate: 45, dmg: 15, color: "#2ecc71", name: "RATE", poisonSpec: { dmg: 1.5, time: 420 }, desc:"적에게 7초간 서서히 피를 말리는 맹독 부여", unlockTier: 8 },
-      POWER: { type:"base", cost: 100, range: 100, rate: 60, dmg: 40, color: "#f1c40f", name: "POWER", chain: 3, desc:"적중 시 3명의 적에게 연쇄 번개", unlockTier: 11 },
+      POWER: { type:"base", cost: 100, range: 100, rate: 60, dmg: 40, color: "#ffd700", name: "POWER", chain: 3, desc:"적중 시 3명의 적에게 연쇄 번개", unlockTier: 11 },
       MAX: { type:"base", cost: 130, range: 220, rate: 110, dmg: 200, color: "#8e44ad", name: "MAX", desc:"강력한 장거리 저격", unlockTier: 14 },
       
       // 🟦 2. 레어 타워 (8종) - [일반 + 일반] 조합
@@ -385,13 +385,13 @@
       COUNTIFS: { type:"rare", req: ["POWER", "MAX"], range: 180, rate: 4, dmg: 50, color: "#1abc9c", name: "CNTIFS", desc:"[단일] 초고속 연사 기관총" },
       SUBTOTAL: { type:"rare", req: ["SUM", "VLOOKUP"], range: 130, rate: 18, dmg: 80, color: "#d35400", name: "SUBTOT", splash: 65, desc:"[폭발] 빠른 속도의 광역 폭격기" },
       SMALL: { type:"rare", req: ["MIN", "RATE"], range: 130, rate: 12, dmg: 50, color: "#fdcb6e", name: "SMALL", stun: 10, poisonSpec: { dmg: 2.0, time: 200 }, desc:"[기절+맹독] 얼음 독가스 방출" },
-      PRODUCT: { type:"rare", req: ["AVERAGE", "POWER"], range: 130, rate: 25, dmg: 90, color: "#27ae60", name: "PROD", chain: 5, desc:"[번개] 고속 5연쇄 번개 방출" },
+      PRODUCT: { type:"rare", req: ["AVERAGE", "POWER"], range: 130, rate: 25, dmg: 90, color: "#1e90ff", name: "PROD", chain: 5, desc:"[번개] 고속 5연쇄 번개 방출" },
       EXACT: { type:"rare", req: ["IFERROR", "MAX"], range: 260, rate: 3, dmg: 120, color: "#2c3e50", name: "EXACT", isBeam: true, desc:"[단일+둔화] 초장거리 저격 슬로우 빔" },
 
       // 🟪 3. 에픽 타워 (4종) - [레어 + 레어] 조합
       INDEXMATCH: { type:"epic", req: ["SUMIF", "MATCH"], range: 200, rate: 50, dmg: 400, color: "#f1c40f", name: "IDXMAT", splash: 150, stun: 20, desc:"[대폭발+기절] 엄청난 범위의 광역 빙결 폭발" },
       XLOOKUP: { type:"epic", req: ["PIVOT", "COUNTIFS"], range: 220, rate: 4, dmg: 180, color: "#e74c3c", name: "XLOOK", pierce: true, desc:"[단일+관통] 쉴드를 찢어버리는 플라즈마 연사" },
-      FILTER: { type:"epic", req: ["SUBTOTAL", "PRODUCT"], range: 280, rate: 10, dmg: 350, color: "#3498db", name: "FILTER", splash: 80, chain: 10, desc:"[광역 번개] 10연쇄 초고압 폭발 번개" },
+      FILTER: { type:"epic", req: ["SUBTOTAL", "PRODUCT"], range: 280, rate: 10, dmg: 350, color: "#111111", name: "FILTER", splash: 80, chain: 10, desc:"[광역 번개] 10연쇄 초고압 폭발 번개" },
       XMATCH: { type:"epic", req: ["SMALL", "EXACT"], range: 240, rate: 3, dmg: 150, color: "#c0392b", name: "XMAT", multi: 5, isBeam: true, stun: 12, desc:"[다중+마비] 5갈래 초장거리 마비 광선" },
 
       // 🟥 4. 전설 타워 (2종) - [에픽 + 에픽] 조합
@@ -625,7 +625,7 @@
 
         if (this.type === "RUNNER") { this.tag = dim.mobs[0]; this.speed = this.baseSpeed * 1.6; this.maxHp = baseHp * 0.5; } 
         else if (this.type === "TANK") { this.tag = dim.mobs[1]; this.speed = this.baseSpeed * 0.7; this.maxHp = baseHp * 0.8; this.maxShield = baseHp * 1.5; } 
-        else if (this.type === "BOSS") { this.tag = dim.boss; this.speed = 0.7; this.maxHp = baseHp * 20; this.maxShield = baseHp * 10; addShake(15); } 
+        else if (this.type === "BOSS") { this.tag = dim.boss; this.speed = 0.7; this.maxHp = baseHp * 20; this.maxShield = baseHp * 10; addShake(5); } 
         else if (this.type === "SPLITTER") { this.tag = tagSplit; this.speed = this.baseSpeed * 0.8; this.maxHp = baseHp * 1.2; }
         else if (this.type === "HEALER") { this.tag = tagHeal; this.speed = this.baseSpeed * 0.9; this.maxHp = baseHp * 0.9; }
         else if (this.type === "DASHER") { this.tag = tagDash; this.speed = this.baseSpeed * 0.6; this.maxHp = baseHp * 0.7; }
@@ -983,7 +983,7 @@
         this.hitSet.add(this.target);
 
         if (this.tower.baseSpec.splash) {
-          addShake(2 + Math.min(4, this.tower.level * 0.5)); Sound.hit("VLOOKUP");
+          addShake(0.5 + Math.min(1.5, this.tower.level * 0.2)); Sound.hit("VLOOKUP");
           const splashRange = this.tower.baseSpec.splash * (1 + (this.tower.level - 1) * 0.1);
           if(highQuality) shockwaves.push(new Shockwave(this.x, this.y, splashRange, this.tower.baseSpec.color));
           
@@ -1095,7 +1095,7 @@
       draw() { ctx.fillStyle = this.color; ctx.font = this.isCrit ? "bold 13px sans-serif" : "bold 9px sans-serif"; ctx.textAlign = "center"; ctx.globalAlpha = this.life / this.maxLife; ctx.fillText(this.text, this.x, this.y); ctx.globalAlpha = 1; }
     }
 
-    function addShake(amt) { if(highQuality) screenShake = Math.min(screenShake + amt, 10); }
+    function addShake(amt) { if(highQuality) screenShake = Math.min(screenShake + amt, 4); }
 
     function drawExcelGrid(dim) {
       ctx.strokeStyle = dim.grid; ctx.lineWidth = 1; ctx.fillStyle = (dim.bg==="#0d0d0d" ? "#1a1a1a" : "#f3f2f1"); 
@@ -1462,7 +1462,7 @@
           }
 
           if (enemies[i].isBoss) { 
-            addShake(15); Sound.hit("MAX"); 
+            addShake(5); Sound.hit("MAX"); 
             if(highQuality) for(let p=0; p<40; p++) particles.push(new Particle(enemies[i].x, enemies[i].y, "#ffeb3b", 6)); 
             floatingTexts.push(new FloatingText(enemies[i].x, enemies[i].y - 30, "+BOSS REWARD", "#ffeb3b", true, 50)); 
             showAugments(); 
