@@ -133,7 +133,7 @@
 
     <div id="toolbar">
       <div class="stat-badge">🚦 트래픽: <span id="enemy-count" class="traffic-green">0</span> / 300</div>
-      <div class="stat-badge">💰 예산: $<span id="budget">100</span></div>
+      <div class="stat-badge">💰 예산: $<span id="budget">450</span></div>
       <div class="stat-badge" id="tier-badge">📈 티어: 1 (EXCEL)</div>
       
       <!-- 🎯 로컬스토리지 최고 기록 뱃지 -->
@@ -346,7 +346,7 @@
     let rerolls = 2; 
     let globalDamageStats = {};
 
-    let gameState = 0; let budget = 100; let selectedTower = "SUM";
+    let gameState = 0; let budget = 450; let selectedTower = "SUM";
     let gameTime = 0; let frame = 0; let screenShake = 0; let currentTier = 1; let currentDimName = "EXCEL"; let bsodFlash = 0;
 
     let towers = []; let enemies = []; let projectiles = []; let particles = []; let floatingTexts = []; let shockwaves = []; let lightnings = [];
@@ -649,7 +649,7 @@
         const tagHeal  = dimName==="EXCEL" ? "#CIRCULAR!" : (dimName==="HWP" ? "자동저장" : (dimName==="PPT" ? "마스터적용" : "Safe_Mode"));
         const tagDash  = dimName==="EXCEL" ? "#CALC!" : (dimName==="HWP" ? "강제종료" : (dimName==="PPT" ? "모핑효과" : "Mem_Leak"));
 
-        if (this.type === "RUNNER") { this.tag = dim.mobs[0]; this.speed = this.baseSpeed * 1.6; this.maxHp = baseHp * 0.5; } 
+        if (this.type === "RUNNER") { this.tag = dim.mobs[0]; this.speed = this.baseSpeed * 2.5; this.maxHp = baseHp * 0.5; } 
         else if (this.type === "TANK") { this.tag = dim.mobs[1]; this.speed = this.baseSpeed * 0.7; this.maxHp = baseHp * 0.8; this.maxShield = baseHp * 5.0; } // 🛡️ 쉴드량 대폭 증가!
         else if (this.type === "BOSS") { this.tag = dim.boss; this.speed = 0.7; this.maxHp = baseHp * 20; this.maxShield = baseHp * 30; addShake(5); } // 🛡️ 보스 쉴드도 대폭 증가!
         else if (this.type === "SPLITTER") { this.tag = tagSplit; this.speed = this.baseSpeed * 0.8; this.maxHp = baseHp * 1.2; }
@@ -659,8 +659,8 @@
         
         this.hp = this.maxHp; this.shield = this.maxShield; this.currentSpeed = this.speed;
         
-        // 🎯 [너프됨] 처치 보상 50% 감소
-        this.reward = isBoss ? 250 : (this.type==="TANK" || this.type==="SPLITTER" ? 7 : 5);
+        // 🎯 극악 난이도: 처치 보상 뼈깎는 감소
+        this.reward = isBoss ? 150 : (this.type==="TANK" || this.type==="SPLITTER" ? 4 : 2);
         
         this.track = track || (Math.random() > 0.5 ? pathOuterPx : pathInnerPx);
         this.progress = startProgress; 
@@ -707,7 +707,7 @@
             let healed = false;
             enemies.forEach(e => {
               if (e !== this && e.hp > 0 && e.hp < e.maxHp && Math.hypot(e.x - this.x, e.y - this.y) < 110) {
-                e.hp = Math.min(e.maxHp, e.hp + (e.maxHp * 0.15));
+                e.hp = Math.min(e.maxHp, e.hp + (e.maxHp * 0.20));
                 floatingTexts.push(new FloatingText(e.x, e.y - 15, "+HEAL", "#2ecc71", false, 30));
                 healed = true;
               }
@@ -1476,7 +1476,7 @@
       
       drawExcelGrid(dim);
 
-      const spawnInterval = Math.max(15, 60 - currentTier * 3);
+      const spawnInterval = Math.max(7, 50 - currentTier * 3);
       if (frame % spawnInterval === 0) {
         enemies.push(new ErrorEnemy(currentTier, false));
         if (enemies.length >= MAX_ENEMIES) {
